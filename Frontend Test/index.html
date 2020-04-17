@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Three.js Test</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+<script>
+    /*inputs = {
+        forward: false,
+        left: false,
+        backward: false,
+        right: false
+    };
+
+    document.addEventListener("keydown", onDocumentKeyDown, false);
+    function onDocumentKeyDown(event) {
+        switch (event.code) {
+            case 'KeyW':
+                inputs.forward = true;
+                break;
+            case 'KeyA':
+                inputs.left = true;
+                break;
+            case 'KeyS':
+                inputs.backward = true;
+                break;
+            case 'KeyD':
+                inputs.right = true;
+                break;
+        }
+    }
+
+    document.addEventListener("keyup", onDocumentKeyUp, false);
+    function onDocumentKeyUp(event) {
+        switch (event.code) {
+            case 'KeyW':
+                inputs.forward = false;
+                break;
+            case 'KeyA':
+                inputs.left = false;
+                break;
+            case 'KeyS':
+                inputs.backward = false;
+                break;
+            case 'KeyD':
+                inputs.right = false;
+                break;
+        }
+    }*/
+
+    var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+    var renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(renderer.domElement);
+
+    var geometry = new THREE.BoxGeometry();
+    var material = new THREE.MeshBasicMaterial({color: 0x00ff00});
+    var cube = new THREE.Mesh(geometry, material);
+    scene.add(cube);
+
+    //var controls = new OrbitControls(camera, renderer.domElement);
+
+    camera.position.set(0, 20, 100);
+    //controls.update();
+
+    var animate = function () {
+        requestAnimationFrame(animate);
+
+        cube.rotation.x += 0.01;
+        cube.rotation.y += 0.01;
+
+        /*if(inputs.forward){
+            camera.position.z += 0.1;
+        }else if(inputs.backward){
+            camera.position.z -= 0.1;
+        }else if(inputs.left){
+            camera.position.x -= 0.1;
+        }else if(inputs.right){
+            camera.position.x += 0.1;
+        }*/
+
+        //controls.update();
+
+        renderer.render(scene, camera);
+    };
+
+    animate();
+</script>
+</body>
+</html>
