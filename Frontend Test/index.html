@@ -34,71 +34,91 @@
     <h1 id="scale"></h1>
 </div>
 <script>
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, Math.pow(10, 6));
-    const renderer = new THREE.WebGLRenderer();
-    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    // Define standard three.js objects required to make scene function properly
+    const scene = new THREE.Scene(); // Scene itself, contains all objects
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, Math.pow(10, 6)); // Camera using a perspective view (as opposed to orthographic. Aspect ratio set to match window and camera renders from 0.1 units away to 10^6 units away.
+    const renderer = new THREE.WebGLRenderer(); // Three.js renderer. The actual web element (canvas object) if I'm not mistaken?
+    const controls = new THREE.OrbitControls(camera, renderer.domElement); // Uses standard orbit controls to manipulate the camera's movement. Might change it to be more like E:D at some point but this works for now.
     let settings = {
-        zoomIncrement: 10
+        zoomIncrement: 10 // The factor that the grid is scaled by. By default it is 10, i.e. 1x1 grid -> 10x10 grid -> 100x100 grid
     };
 
-    renderer.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(renderer.domElement);
+    renderer.setSize(window.innerWidth, window.innerHeight); // Set renderer object (canvas element) to match window size
+    document.body.appendChild(renderer.domElement); // Add the canvas element to the page.
 
+    // Load in a space cube map at Assets/skybox/ to act as a backdrop.
     scene.background = new THREE.CubeTextureLoader()
         .setPath('Assets/skybox/')
         .load([
-            'right.png',
-            'left.png',
-            'top.png',
-            'bottom.png',
-            'front.png',
-            'back.png'
+            'right.png', //     positive x
+            'left.png', //      negative x
+            'top.png', //       positive y
+            'bottom.png', //    negative y
+            'front.png', //     positive z
+            'back.png' //       negative z
         ]);
 
+    // Define a directional light source coming from approximately where the main star is on the cubemap
     scene.sun = new THREE.DirectionalLight(0xffffff, 0.7);
     scene.sun.position.set(-1, -0.15, -0.1);
     scene.add(scene.sun);
 
+    // Add a soft ambient light source to illuminate objects indirectly, as if from other smaller stars.
     scene.stars = new THREE.AmbientLight(0x404040, 0.2);
     scene.add(scene.stars);
 
+    // Add a basic cube just for testing
     let geometry = new THREE.BoxGeometry();
     let material = new THREE.MeshPhongMaterial({color: 0x00ff00});
     let cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
 
+    // Add a grid that spans 1000 squares, each 1x1 unit.
     let gridHelper = new THREE.GridHelper(1000, 1000);
     scene.add(gridHelper);
 
+    // Position the camera above and behind the scene.
     camera.position.set(0, 20, 100);
     controls.update();
 
+    // Animate subroutine, called each frame to update the scene.
     const animate = function () {
+        // Schedule a new frame at the monitor's refresh rate
         requestAnimationFrame(animate);
 
+        // Find the distance from the camera to the point it orbits around
         let cameraFocus = controls.target;
         let cameraPosition = camera.position;
         let cameraZoomDistance = cameraPosition.distanceTo(cameraFocus);
+
+        // Define a "Zoom Factor" by taking the logarithm of the zoom distance divided by five, in the base of the increment defined earlier in the settings object.
         let zoomFactor = Math.floor(Math.log((cameraZoomDistance / 5) / Math.log(settings.zoomIncrement)));
+
+        // Output a scale in text to a h1 element on top of the canvas
         document.getElementById("scale").innerText = "1 Grid Tile = " + Math.pow(settings.zoomIncrement, zoomFactor).toString() + "km × " + Math.pow(settings.zoomIncrement, zoomFactor).toString() + "km.";
+
+        // Scale the grid to match the zoom factor, that is to say, scale it by zoom Increment raised to the power of zoom Factor
         gridHelper.scale.set(Math.pow(settings.zoomIncrement, zoomFactor), Math.pow(settings.zoomIncrement, zoomFactor), Math.pow(settings.zoomIncrement, zoomFactor));
 
+        // Make the test cube spin around
         cube.rotation.x += 0.01;
         cube.rotation.y += 0.01;
 
+        // Update controls system each frame to prevent issues when moving camera or resizing window
         controls.update();
 
+        // Render this frame.
         renderer.render(scene, camera);
     };
 
+    // Manually call the first frame to be animated
     animate();
 
     function onWindowResize() {
 
+        // Reset the camera and viewport to match the window dimensions if it is resized.
         camera.aspect = window.innerWidth / window.innerHeight;
         camera.updateProjectionMatrix();
-
         renderer.setSize(window.innerWidth, window.innerHeight);
 
     }
