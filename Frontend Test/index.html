@@ -29,6 +29,7 @@
 <body onresize="onWindowResize()">
 <script src="js/threejs/build/three.min.js"></script>
 <script src="js/threejs/controls/OrbitControls.js"></script>
+<script src="js/datgui/dat.gui.min.js"></script>
 <div class="canvasOverlay">
     <h1 id="scale"></h1>
 </div>
@@ -37,6 +38,10 @@
     const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, Math.pow(10, 6));
     const renderer = new THREE.WebGLRenderer();
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    let settings = {
+        zoomIncrement: 10
+    };
+
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
@@ -75,9 +80,9 @@
         let cameraFocus = controls.target;
         let cameraPosition = camera.position;
         let cameraZoomDistance = cameraPosition.distanceTo(cameraFocus);
-        let zoomFactor = Math.floor(Math.log10(cameraZoomDistance / 5));
-        document.getElementById("scale").innerText = "1 Grid Tile = " + Math.pow(10, zoomFactor).toString() + "km.";
-        gridHelper.scale.set(Math.pow(10, zoomFactor), Math.pow(10, zoomFactor), Math.pow(10, zoomFactor));
+        let zoomFactor = Math.floor(Math.log((cameraZoomDistance / 5) / Math.log(settings.zoomIncrement)));
+        document.getElementById("scale").innerText = "1 Grid Tile = " + Math.pow(settings.zoomIncrement, zoomFactor).toString() + "km × " + Math.pow(settings.zoomIncrement, zoomFactor).toString() + "km.";
+        gridHelper.scale.set(Math.pow(settings.zoomIncrement, zoomFactor), Math.pow(settings.zoomIncrement, zoomFactor), Math.pow(settings.zoomIncrement, zoomFactor));
 
         cube.rotation.x += 0.01;
         cube.rotation.y += 0.01;
@@ -96,6 +101,11 @@
 
         renderer.setSize(window.innerWidth, window.innerHeight);
 
+    }
+
+    window.onload = () => {
+        const gui = new dat.GUI();
+        gui.add(settings, "zoomIncrement").min(2).max(20).step(1);
     }
 </script>
 </body>
