@@ -11,59 +11,32 @@
         canvas {
             display: block;
         }
+
+        .canvasOverlay {
+            position: fixed;
+            left: 0;
+            top: 0;
+            color: white;
+            font-family: sans-serif;
+        }
+
+        .canvasOverlay > h1 {
+            margin: 0;
+            padding: 20px;
+        }
     </style>
 </head>
-<body>
+<body onresize="onWindowResize()">
 <script src="js/threejs/build/three.min.js"></script>
 <script src="js/threejs/controls/OrbitControls.js"></script>
+<div class="canvasOverlay">
+    <h1 id="scale"></h1>
+</div>
 <script>
-    /*inputs = {
-        forward: false,
-        left: false,
-        backward: false,
-        right: false
-    };
-
-    document.addEventListener("keydown", onDocumentKeyDown, false);
-    function onDocumentKeyDown(event) {
-        switch (event.code) {
-            case 'KeyW':
-                inputs.forward = true;
-                break;
-            case 'KeyA':
-                inputs.left = true;
-                break;
-            case 'KeyS':
-                inputs.backward = true;
-                break;
-            case 'KeyD':
-                inputs.right = true;
-                break;
-        }
-    }
-
-    document.addEventListener("keyup", onDocumentKeyUp, false);
-    function onDocumentKeyUp(event) {
-        switch (event.code) {
-            case 'KeyW':
-                inputs.forward = false;
-                break;
-            case 'KeyA':
-                inputs.left = false;
-                break;
-            case 'KeyS':
-                inputs.backward = false;
-                break;
-            case 'KeyD':
-                inputs.right = false;
-                break;
-        }
-    }*/
-
-    var scene = new THREE.Scene();
-    var camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-
-    var renderer = new THREE.WebGLRenderer();
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, Math.pow(10, 6));
+    const renderer = new THREE.WebGLRenderer();
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
     renderer.setSize(window.innerWidth, window.innerHeight);
     document.body.appendChild(renderer.domElement);
 
@@ -85,31 +58,29 @@
     scene.stars = new THREE.AmbientLight(0x404040, 0.2);
     scene.add(scene.stars);
 
-    var geometry = new THREE.BoxGeometry();
-    var material = new THREE.MeshPhongMaterial({color: 0x00ff00});
-    var cube = new THREE.Mesh(geometry, material);
+    let geometry = new THREE.BoxGeometry();
+    let material = new THREE.MeshPhongMaterial({color: 0x00ff00});
+    let cube = new THREE.Mesh(geometry, material);
     scene.add(cube);
 
-    var controls = new THREE.OrbitControls(camera, renderer.domElement);
+    let gridHelper = new THREE.GridHelper(1000, 1000);
+    scene.add(gridHelper);
 
     camera.position.set(0, 20, 100);
     controls.update();
 
-    var animate = function () {
+    const animate = function () {
         requestAnimationFrame(animate);
+
+        let cameraFocus = controls.target;
+        let cameraPosition = camera.position;
+        let cameraZoomDistance = cameraPosition.distanceTo(cameraFocus);
+        let zoomFactor = Math.floor(Math.log10(cameraZoomDistance / 5));
+        document.getElementById("scale").innerText = "1 Grid Tile = " + Math.pow(10, zoomFactor).toString() + "km.";
+        gridHelper.scale.set(Math.pow(10, zoomFactor), Math.pow(10, zoomFactor), Math.pow(10, zoomFactor));
 
         cube.rotation.x += 0.01;
         cube.rotation.y += 0.01;
-
-        /*if(inputs.forward){
-            camera.position.z += 0.1;
-        }else if(inputs.backward){
-            camera.position.z -= 0.1;
-        }else if(inputs.left){
-            camera.position.x -= 0.1;
-        }else if(inputs.right){
-            camera.position.x += 0.1;
-        }*/
 
         controls.update();
 
@@ -117,6 +88,15 @@
     };
 
     animate();
+
+    function onWindowResize() {
+
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+    }
 </script>
 </body>
 </html>
