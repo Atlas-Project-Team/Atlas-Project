@@ -49,15 +49,15 @@
                 "Object": "Planet",
                 "Type": "Gas Giant"
             },
-            "scale": 10.0,
+            "scale": 11144.9,
             "name": "Eos"
         },
         {
-            "scale": 0.00001,
+            "scale": 0.001,
             "name": "Eos 222",
             "objectId": 1,
             "pos": {
-                "x": 15.0,
+                "x": 15000.0,
                 "y": 0.0,
                 "z": 0.0
             },
@@ -72,12 +72,16 @@
 
     // Define standard three.js objects required to make scene function properly
     const scene = new THREE.Scene(); // Scene itself, contains all objects
-    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, Math.pow(10, -2), Math.pow(10, 8)); // Camera using a perspective view (as opposed to orthographic. Aspect ratio set to match window and camera renders from 0.1 units away to 10^6 units away.
+    const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, Math.pow(10, 0), Math.pow(10, 6)); // Camera using a perspective view (as opposed to orthographic. Aspect ratio set to match window and camera renders from 0.1 units away to 10^6 units away.
     const renderer = new THREE.WebGLRenderer({antialias: true}); // Three.js renderer. The actual web element (canvas object) if I'm not mistaken?
     const controls = new THREE.OrbitControls(camera, renderer.domElement); // Uses standard orbit controls to manipulate the camera's movement. Might change it to be more like E:D at some point but this works for now.
     let settings = {
-        zoomIncrement: 10 // The factor that the grid is scaled by. By default it is 10, i.e. 1x1 grid -> 10x10 grid -> 100x100 grid
+        zoomIncrement: 10, // The factor that the grid is scaled by. By default it is 10, i.e. 1x1 grid -> 10x10 grid -> 100x100 grid
+        asteroidCount: 1000 // The number of asteroids to render around Eos
     };
+
+    let asteroids = [];
+    let spawnedAsteroids = 0;
 
     for (let mapObject in mapData) {
         // noinspection JSUnfilteredForInLoop *because JSON Validation is way easier*
@@ -124,7 +128,7 @@
     scene.add(gridHelper);
 
     // Position the camera above and behind the scene.
-    camera.position.set(0, 20, 100);
+    camera.position.set(0, 4000, 20000);
     controls.update();
 
     // Animate subroutine, called each frame to update the scene.
@@ -139,6 +143,54 @@
 
         // Define a "Zoom Factor" by taking the logarithm of the zoom distance divided by five, in the base of the increment defined earlier in the settings object.
         let zoomFactor = Math.floor(Math.log(cameraZoomDistance) / Math.log(settings.zoomIncrement));
+
+        // Dynamically set camera near/far plane
+        camera.near = (Math.pow(10, zoomFactor - 3));
+        camera.far = (Math.pow(10, zoomFactor + 3));
+        camera.updateProjectionMatrix();
+
+        // Ensure number of asteroids rendered matches setting
+        while (spawnedAsteroids !== settings.asteroidCount) {
+            if (asteroids.length < settings.asteroidCount) {
+                // Add more asteroids
+                let asteroidLoader = new THREE.GLTFLoader();
+
+                const models = [
+                    "Assets/models/Asteroids/a4.gltf",
+                    "Assets/models/Asteroids/b4.gltf",
+                    "Assets/models/Asteroids/c4.gltf"
+                ];
+                let model = models[Math.floor(Math.random() * models.length)];
+
+                asteroidLoader.load(model, (gltf) => {
+                    let radius = 14000 + Math.random() * 2200;
+                    let angle = Math.random() * 2 * Math.PI;
+                    gltf.scene.position.set(Math.cos(angle) * radius, Math.random() * 200, Math.sin(angle) * radius);
+                    gltf.scene.scale.set((Math.random() + 0.5) * 100, (Math.random() + 0.5) * 100, (Math.random() + 0.5) * 100);
+                    gltf.scene.rotation.set(Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI);
+                    gltf.scene.rotationAmounts = new THREE.Vector3(Math.random() * 0.0075, Math.random() * 0.0075, Math.random() * 0.0075);
+                    asteroids.push(gltf.scene);
+                    scene.add(asteroids[asteroids.length - 1]);
+                }, undefined, (err) => {
+                    console.error(err)
+                });
+                spawnedAsteroids++;
+            } else if (asteroids.length > settings.asteroidCount) {
+                // Remove some asteroids
+                scene.remove(asteroids.pop());
+                spawnedAsteroids--;
+            }
+        }
+
+        // Rotate the asteroids
+        for (let asteroid in asteroids) {
+            // noinspection JSUnfilteredForInLoop *Shut up WebStorm*
+            asteroids[asteroid].rotation.x += asteroids[asteroid].rotationAmounts.x;
+            // noinspection JSUnfilteredForInLoop *Shut up WebStorm*
+            asteroids[asteroid].rotation.y += asteroids[asteroid].rotationAmounts.y;
+            // noinspection JSUnfilteredForInLoop *Shut up WebStorm*
+            asteroids[asteroid].rotation.z += asteroids[asteroid].rotationAmounts.z;
+        }
 
         // Output a scale in text to a h1 element on top of the canvas
         document.getElementById("scale").innerText = "1 Grid Tile = " + Math.pow(settings.zoomIncrement, zoomFactor).toString() + "km × " + Math.pow(settings.zoomIncrement, zoomFactor).toString() + "km.";
@@ -168,6 +220,7 @@
     window.onload = () => {
         const gui = new dat.GUI();
         gui.add(settings, "zoomIncrement").min(2).max(20).step(1);
+        gui.add(settings, "asteroidCount").min(0).max(10000).step(1);
     }
 </script>
 </body>
