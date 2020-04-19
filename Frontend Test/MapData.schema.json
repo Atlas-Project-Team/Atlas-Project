@@ -1,0 +1,171 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "type": "array",
+  "title": "Map Data API Schema",
+  "description": "The schema defines how map data should be formatted when returned from the API.",
+  "default": [],
+  "uniqueItems": true,
+  "additionalItems": false,
+  "items": {
+    "$id": "#/items",
+    "type": "object",
+    "title": "Map Object",
+    "description": "The JSON Object defining a single entity on the map.",
+    "examples": [
+      {
+        "objectId": 0,
+        "texturePath": "/path/to/texture",
+        "pos": {
+          "x": 0.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "modelPath": "/path/to/model",
+        "objectInfo": {
+          "Object": "Planet",
+          "Type": "Gas Giant"
+        },
+        "scale": 10.0,
+        "name": "Eos"
+      },
+      {
+        "scale": 1.0,
+        "name": "Eos 222",
+        "objectId": 1,
+        "texturePath": "/path/to/texture",
+        "pos": {
+          "x": 15.0,
+          "y": 0.0,
+          "z": 0.0
+        },
+        "modelPath": "/path/to/model",
+        "objectInfo": {
+          "Object": "Station",
+          "Type": "Neutral"
+        }
+      }
+    ],
+    "additionalProperties": false,
+    "required": [
+      "objectId",
+      "name",
+      "pos",
+      "modelPath",
+      "texturePath",
+      "scale"
+    ],
+    "properties": {
+      "objectId": {
+        "$id": "#/items/properties/objectId",
+        "type": "integer",
+        "title": "Object ID",
+        "description": "The ID of the Object in the Backend Mapping database.",
+        "examples": [
+          0
+        ]
+      },
+      "name": {
+        "$id": "#/items/properties/name",
+        "type": "string",
+        "title": "Object Name",
+        "description": "The name of the Starbase object to be shown on the map.",
+        "examples": [
+          "Eos"
+        ]
+      },
+      "pos": {
+        "$id": "#/items/properties/pos",
+        "type": "object",
+        "title": "Position Vector",
+        "description": "An object containing an X, Y and Z coordinate to describe the object's position on the map.",
+        "examples": [
+          {
+            "y": 0.0,
+            "z": 0.0,
+            "x": 0.0
+          }
+        ],
+        "additionalProperties": false,
+        "required": [
+          "x",
+          "y",
+          "z"
+        ],
+        "properties": {
+          "x": {
+            "$id": "#/items/properties/pos/properties/x",
+            "type": "number",
+            "title": "X coordinate",
+            "description": "A floating point describing the object's position relative to the x-axis.",
+            "examples": [
+              0.0
+            ]
+          },
+          "y": {
+            "$id": "#/items/properties/pos/properties/y",
+            "type": "number",
+            "title": "Y coordinate",
+            "description": "A floating point describing the object's position relative to the y-axis.",
+            "examples": [
+              0.0
+            ]
+          },
+          "z": {
+            "$id": "#/items/properties/pos/properties/z",
+            "type": "number",
+            "title": "Z coordinate",
+            "description": "A floating point describing the object's position relative to the z-axis.",
+            "examples": [
+              0.0
+            ]
+          }
+        }
+      },
+      "modelPath": {
+        "$id": "#/items/properties/modelPath",
+        "type": "string",
+        "title": "Model Path",
+        "description": "The file path to the model that the object uses, relative to the website's root.",
+        "default": "",
+        "examples": [
+          "/path/to/model"
+        ]
+      },
+      "texturePath": {
+        "$id": "#/items/properties/texturePath",
+        "type": "string",
+        "title": "Texture Path",
+        "description": "The file path to the model that the object uses, relative to the website's root.",
+        "default": "",
+        "examples": [
+          "/path/to/texture"
+        ]
+      },
+      "scale": {
+        "$id": "#/items/properties/scale",
+        "type": "number",
+        "title": "Scale",
+        "description": "The scale of the object/model that three.js should render at.",
+        "default": 1,
+        "examples": [
+          10.0
+        ]
+      },
+      "objectInfo": {
+        "$id": "#/items/properties/objectInfo",
+        "type": "object",
+        "title": "Object Info",
+        "description": "A JSON Object containing stats and descriptions of the map object that will be rendered in a tooltip.",
+        "default": {},
+        "examples": [
+          {
+            "Type": "Gas Giant",
+            "Object": "Planet"
+          }
+        ],
+        "additionalProperties": true,
+        "required": []
+      }
+    }
+  }
+}
