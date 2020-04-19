@@ -19,7 +19,7 @@
           "y": 0.0,
           "z": 0.0
         },
-        "modelPath": "/Assets/models/neptune/",
+        "modelPath": "/Assets/models/Neptune/",
         "objectInfo": {
           "Object": "Planet",
           "Type": "Gas Giant"
@@ -36,7 +36,7 @@
           "y": 0.0,
           "z": 0.0
         },
-        "modelPath": "/path/to/model",
+        "modelPath": "/Assets/models/Station/",
         "objectInfo": {
           "Object": "Station",
           "Type": "Neutral"
