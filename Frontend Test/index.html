@@ -12,7 +12,7 @@
             display: block;
         }
 
-        .canvasOverlay {
+        #canvasOverlay {
             position: fixed;
             left: 0;
             top: 0;
@@ -20,9 +20,15 @@
             font-family: sans-serif;
         }
 
-        .canvasOverlay > h1 {
+        #canvasOverlay > h1 {
             margin: 0;
             padding: 20px;
+        }
+
+        #scale {
+            position: fixed;
+            bottom: 0;
+            left: 5px;
         }
     </style>
 </head>
@@ -31,10 +37,13 @@
 <script src="js/threejs/controls/OrbitControls.js"></script>
 <script src="js/threejs/loaders/GLTFLoader.js"></script>
 <script src="js/datgui/dat.gui.min.js"></script>
-<div class="canvasOverlay">
-    <h1 id="scale"></h1>
+<script src="js/statsjs/stats.min.js"></script>
+<div id="canvasOverlay">
+    <h3 id="scale"></h3>
 </div>
 <script>
+    let stats = new Stats();
+    document.getElementById("canvasOverlay").appendChild(stats.dom);
     // Dummy Map data to test on before we add in
     mapData = [
         {
@@ -144,6 +153,7 @@
 
     // Animate subroutine, called each frame to update the scene.
     const animate = function () {
+        stats.begin();
         // Schedule a new frame at the monitor's refresh rate
         requestAnimationFrame(animate);
 
@@ -205,6 +215,7 @@
 
         // Render this frame.
         renderer.render(scene, camera);
+        stats.end();
     };
 
     // Manually call the first frame to be animated
