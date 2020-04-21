@@ -126,12 +126,12 @@
         ]);
 
     // Define a directional light source coming from approximately where the main star is on the cubemap
-    scene.sun = new THREE.DirectionalLight(0xffffff, 0.7);
+    scene.sun = new THREE.DirectionalLight(0xffffff, 0.9);
     scene.sun.position.set(-1, -0.15, -0.1);
     scene.add(scene.sun);
 
     // Add a soft ambient light source to illuminate objects indirectly, as if from other smaller stars.
-    scene.stars = new THREE.AmbientLight(0x404040, 0.2);
+    scene.stars = new THREE.AmbientLight(0x404040, 0.5);
     scene.add(scene.stars);
 
     // Add a grid that spans 1000 squares, each 1x1 unit.
@@ -169,7 +169,7 @@
 
                 let radius = 14000 + Math.random() * 2200;
                 let angle = Math.random() * 2 * Math.PI;
-                lod.position.set(Math.cos(angle) * radius, Math.random() * 200, Math.sin(angle) * radius);
+                lod.position.set(Math.cos(angle) * radius + (Math.random() - 0.5) * 1000, (Math.random() - 0.5) * 1000, Math.sin(angle) * radius + (Math.random() - 0.5) * 1000);
                 lod.scale.set((Math.random() + 0.5) * 100, (Math.random() + 0.5) * 100, (Math.random() + 0.5) * 100);
                 lod.rotation.set(Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI);
                 lod.rotationAmounts = new THREE.Vector3(Math.random() * 0.0075, Math.random() * 0.0075, Math.random() * 0.0075);
