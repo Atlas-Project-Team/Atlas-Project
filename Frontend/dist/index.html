@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Three.js Test</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        #canvasOverlay {
+            position: fixed;
+            left: 0;
+            top: 0;
+            color: white;
+            font-family: sans-serif;
+        }
+
+        #canvasOverlay > h1 {
+            margin: 0;
+            padding: 20px;
+        }
+
+        #scale {
+            position: fixed;
+            bottom: 0;
+            left: 5px;
+        }
+    </style>
+</head>
+<body>
+<script id="vertexshader" type="x-shader/x-vertex">
+    varying vec3 vNormal;
+    varying vec2 vUv;
+    varying vec3 vPosition;
+
+    // We only interested in modifying opacity (in fragment shader),
+    // so for vertex shader, we don't modify anything.
+    void main() {
+        vNormal = normal;
+        vUv = uv;
+        vPosition = position;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1);
+    }
+
+</script>
+
+<script id="fragmentshader" type="x-shader/x-fragment">
+    varying vec2 vUv;
+    varying vec3 vPosition;
+    uniform vec3 control;
+    uniform float scale;
+    uniform float zoomDistance;
+
+    uniform sampler2D texture;
+    void main() {
+        // Calculate each vertex's alpha value based on vertex's distance to the control target.
+        vec3 distance = vec3(vPosition*scale) - vec3(control);
+        // Here alpha stands for the squared distance for each vertex to control target.
+        float alpha = distance[0]*distance[0] + distance[1]*distance[1] + distance[2]*distance[2];
+        float range = 5.0*zoomDistance*zoomDistance;
+        float range2 = range - 4.0*zoomDistance*zoomDistance;
+        if (alpha > range) { // If the squared distance is larger than a value.
+            alpha = 0.0;// Set the alpha to 0, which the vertex will be 100% transparent.
+        }
+        else if (alpha < range2) { // If the squared distance is  smaller than a value2.
+            alpha = 1.0;// Set the alpha to 1, which the vertex will be opaque.
+        }
+        else { // If the distance is in between
+            alpha = 1.0 - ((alpha - range2) / (range - range2));// The far from control target, the more transparent.
+        }
+
+        vec4 tcolor = texture2D(texture, vUv);
+        vec4 gray = vec4(vec3(tcolor.r * 0.3 + tcolor.g * 0.59 + tcolor.b * 0.11), alpha);// Assign vertex alpha.
+        gl_FragColor = gray;
+    }
+
+</script>
+<div id="canvasOverlay">
+    <h3 id="scale"></h3>
+</div>
+<script src="bundle.js"></script>
+</body>
+</html>
