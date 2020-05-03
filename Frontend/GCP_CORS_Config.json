@@ -1,0 +1,14 @@
+[
+  {
+    "origin": [
+      "http://localhost:63342"
+    ],
+    "responseHeader": [
+      "Content-Type"
+    ],
+    "method": [
+      "GET"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]

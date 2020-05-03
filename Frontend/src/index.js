@@ -5,9 +5,11 @@ let datgui = require('dat.gui');
 let Stats = require('stats-js');
 
 
-let stats, mapData, asteroidsToLoad, asteroidA, asteroidB, asteroidC, asteroidLODs, gridHelper;
+let stats, mapData, asteroidsToLoad, asteroidA, asteroidB, asteroidC, asteroidLODs;
 let scene, camera, renderer, controls, settings, uniforms, asteroids, spawnedAsteroids;
 let cameraFocus, cameraPosition, cameraZoomDistance, zoomFactor, grid;
+
+const GCPAssets = "http://storage.googleapis.com/project-atlas-assets/Assets/";
 
 init();
 animate();
@@ -24,7 +26,7 @@ function init() {
                 "y": 0.0,
                 "z": 0.0
             },
-            "modelPath": "../Assets/models/Neptune/",
+            "modelPath": GCPAssets + "models/Neptune/",
             "objectInfo": {
                 "Object": "Planet",
                 "Type": "Gas Giant"
@@ -41,7 +43,7 @@ function init() {
                 "y": 0.0,
                 "z": 0.0
             },
-            "modelPath": "../Assets/models/Station/",
+            "modelPath": GCPAssets + "models/Station/",
             "objectInfo": {
                 "Object": "Station",
                 "Type": "Neutral"
@@ -51,9 +53,9 @@ function init() {
 
     asteroidsToLoad = 12;
 
-    asteroidA = loadNewAsteroid(["../Assets/models/Asteroids/a4.gltf", "../Assets/models/Asteroids/a3.gltf", "../Assets/models/Asteroids/a2.gltf", "../Assets/models/Asteroids/a1.gltf"]);
-    asteroidB = loadNewAsteroid(["../Assets/models/Asteroids/b4.gltf", "../Assets/models/Asteroids/b3.gltf", "../Assets/models/Asteroids/b2.gltf", "../Assets/models/Asteroids/b1.gltf"]);
-    asteroidC = loadNewAsteroid(["../Assets/models/Asteroids/c4.gltf", "../Assets/models/Asteroids/c3.gltf", "../Assets/models/Asteroids/c2.gltf", "../Assets/models/Asteroids/c1.gltf"]);
+    asteroidA = loadNewAsteroid([GCPAssets + "models/Asteroids/a4.gltf", GCPAssets + "models/Asteroids/a3.gltf", GCPAssets + "models/Asteroids/a2.gltf", GCPAssets + "models/Asteroids/a1.gltf"]);
+    asteroidB = loadNewAsteroid([GCPAssets + "models/Asteroids/b4.gltf", GCPAssets + "models/Asteroids/b3.gltf", GCPAssets + "models/Asteroids/b2.gltf", GCPAssets + "models/Asteroids/b1.gltf"]);
+    asteroidC = loadNewAsteroid([GCPAssets + "models/Asteroids/c4.gltf", GCPAssets + "models/Asteroids/c3.gltf", GCPAssets + "models/Asteroids/c2.gltf", GCPAssets + "models/Asteroids/c1.gltf"]);
 
     asteroidLODs = [
         asteroidA,
@@ -74,7 +76,7 @@ function init() {
     // Initialize uniforms.
     uniforms = {
         texture: {
-            value: new THREE.TextureLoader().load("../Assets/textures/White.png")
+            value: new THREE.TextureLoader().load(GCPAssets + "textures/White.png")
         },
         control: {
             value: controls.target,
@@ -152,9 +154,9 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight); // Set renderer object (canvas element) to match window size
     document.body.appendChild(renderer.domElement); // Add the canvas element to the page.
 
-    // Load in a space cube map at ../Assets/skybox/ to act as a backdrop.
+    // Load in a space cube map at /Assets/skybox/ to act as a backdrop.
     scene.background = new THREE.CubeTextureLoader()
-        .setPath('../Assets/skybox/')
+        .setPath(GCPAssets + "skybox/")
         .load([
             'right.png', //     positive x
             'left.png', //      negative x
@@ -246,6 +248,7 @@ function animate() {
     // Scale the grid to match the zoom factor, that is to say, scale it by zoom Increment raised to the power of zoom Factor
     grid.scale.set(Math.pow(settings.zoomIncrement, zoomFactor), Math.pow(settings.zoomIncrement, zoomFactor), Math.pow(settings.zoomIncrement, zoomFactor));
     let target = controls.target;
+    // noinspection DuplicatedCode
     grid.position.x = Math.pow(settings.zoomIncrement, zoomFactor) * Math.floor(target.x / Math.pow(settings.zoomIncrement, zoomFactor));
     grid.position.y = Math.pow(settings.zoomIncrement, zoomFactor) * Math.floor(target.y / Math.pow(settings.zoomIncrement, zoomFactor));
     grid.position.z = Math.pow(settings.zoomIncrement, zoomFactor) * Math.floor(target.z / Math.pow(settings.zoomIncrement, zoomFactor));
