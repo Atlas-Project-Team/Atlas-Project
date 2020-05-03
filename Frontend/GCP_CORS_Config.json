@@ -1,8 +1,7 @@
 [
   {
     "origin": [
-      "http://127.0.0.1:63342/",
-      "http://localhost:63342/"
+      "*"
     ],
     "responseHeader": [
       "Content-Type"
@@ -10,6 +9,6 @@
     "method": [
       "GET"
     ],
-    "maxAgeSeconds": 3600
+    "maxAgeSeconds": 7200
   }
 ]

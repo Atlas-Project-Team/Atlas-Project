@@ -1,1 +1,1 @@
-gsutils cors set GCP_CORS_Config.json gs://project-atlas-assets
+gsutil cors set GCP_CORS_Config.json gs://project-atlas-assets
