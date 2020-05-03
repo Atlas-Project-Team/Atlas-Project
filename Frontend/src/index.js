@@ -141,7 +141,7 @@ function init() {
 
         let loader = new GLTFLoader();
 
-        loader.load(modelPath + 'scene.gltf', (gltf) => {
+        loader.load(modelPath + 'out.glb', (gltf) => {
             gltf.scene.scale.set(scale, scale, scale);
             gltf.scene.position.set(pos.x, pos.y, pos.z);
             scene.add(gltf.scene);
@@ -174,10 +174,6 @@ function init() {
     // Add a soft ambient light source to illuminate objects indirectly, as if from other smaller stars.
     scene.stars = new THREE.AmbientLight(0x404040, 0.5);
     scene.add(scene.stars);
-
-    // Add a grid that spans 1000 squares, each 1x1 unit.
-    //gridHelper = new THREE.GridHelper(1000, 1000);
-    //scene.add(gridHelper);
 
     // Position the camera above and behind the scene.
     camera.position.set(0, 4000, 20000);
@@ -248,9 +244,9 @@ function animate() {
     // Scale the grid to match the zoom factor, that is to say, scale it by zoom Increment raised to the power of zoom Factor
     grid.scale.set(Math.pow(settings.zoomIncrement, zoomFactor), Math.pow(settings.zoomIncrement, zoomFactor), Math.pow(settings.zoomIncrement, zoomFactor));
     let target = controls.target;
-    // noinspection DuplicatedCode
+
     grid.position.x = Math.pow(settings.zoomIncrement, zoomFactor) * Math.floor(target.x / Math.pow(settings.zoomIncrement, zoomFactor));
-    grid.position.y = Math.pow(settings.zoomIncrement, zoomFactor) * Math.floor(target.y / Math.pow(settings.zoomIncrement, zoomFactor));
+    grid.position.y = 0;
     grid.position.z = Math.pow(settings.zoomIncrement, zoomFactor) * Math.floor(target.z / Math.pow(settings.zoomIncrement, zoomFactor));
 
 
