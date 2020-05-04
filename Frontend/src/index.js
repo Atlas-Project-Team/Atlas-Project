@@ -9,7 +9,7 @@ let stats, mapData, asteroidsToLoad, asteroidA, asteroidB, asteroidC, asteroidLO
 let scene, camera, renderer, controls, settings, uniforms, asteroids, spawnedAsteroids;
 let cameraFocus, cameraPosition, cameraZoomDistance, zoomFactor, grid;
 
-const GCPAssets = "http://storage.googleapis.com/project-atlas-assets/Assets/";
+const GCPAssets = "http://storage.googleapis.com/project-atlas-assets/HR_Assets/";
 
 init();
 animate();
@@ -53,9 +53,9 @@ function init() {
 
     asteroidsToLoad = 12;
 
-    asteroidA = loadNewAsteroid([GCPAssets + "models/Asteroids/a4.gltf", GCPAssets + "models/Asteroids/a3.gltf", GCPAssets + "models/Asteroids/a2.gltf", GCPAssets + "models/Asteroids/a1.gltf"]);
-    asteroidB = loadNewAsteroid([GCPAssets + "models/Asteroids/b4.gltf", GCPAssets + "models/Asteroids/b3.gltf", GCPAssets + "models/Asteroids/b2.gltf", GCPAssets + "models/Asteroids/b1.gltf"]);
-    asteroidC = loadNewAsteroid([GCPAssets + "models/Asteroids/c4.gltf", GCPAssets + "models/Asteroids/c3.gltf", GCPAssets + "models/Asteroids/c2.gltf", GCPAssets + "models/Asteroids/c1.gltf"]);
+    asteroidA = loadNewAsteroid([GCPAssets + "models/Asteroids/a4.glb", GCPAssets + "models/Asteroids/a3.glb", GCPAssets + "models/Asteroids/a2.glb", GCPAssets + "models/Asteroids/a1.glb"]);
+    asteroidB = loadNewAsteroid([GCPAssets + "models/Asteroids/b4.glb", GCPAssets + "models/Asteroids/b3.glb", GCPAssets + "models/Asteroids/b2.glb", GCPAssets + "models/Asteroids/b1.glb"]);
+    asteroidC = loadNewAsteroid([GCPAssets + "models/Asteroids/c4.glb", GCPAssets + "models/Asteroids/c3.glb", GCPAssets + "models/Asteroids/c2.glb", GCPAssets + "models/Asteroids/c1.glb"]);
 
     asteroidLODs = [
         asteroidA,
@@ -141,7 +141,7 @@ function init() {
 
         let loader = new GLTFLoader();
 
-        loader.load(modelPath + 'out.glb', (gltf) => {
+        loader.load(modelPath + 'model.glb', (gltf) => {
             gltf.scene.scale.set(scale, scale, scale);
             gltf.scene.position.set(pos.x, pos.y, pos.z);
             scene.add(gltf.scene);
@@ -158,12 +158,12 @@ function init() {
     scene.background = new THREE.CubeTextureLoader()
         .setPath(GCPAssets + "skybox/")
         .load([
-            'right.png', //     positive x
-            'left.png', //      negative x
-            'top.png', //       positive y
-            'bottom.png', //    negative y
-            'front.png', //     positive z
-            'back.png' //       negative z
+            'right.jpg', //     positive x
+            'left.jpg', //      negative x
+            'top.jpg', //       positive y
+            'bottom.jpg', //    negative y
+            'front.jpg', //     positive z
+            'back.jpg' //       negative z
         ]);
 
     // Define a directional light source coming from approximately where the main star is on the cubemap
@@ -274,6 +274,10 @@ window.onload = () => {
     const gui = new datgui.GUI();
     gui.add(settings, "zoomIncrement").min(2).max(20).step(1);
     gui.add(settings, "asteroidCount").min(0).max(10000).step(1);
+};
+
+document.body.onload = () => {
+    document.getElementById("loading").remove();
 };
 
 function loadNewAsteroid(model) {

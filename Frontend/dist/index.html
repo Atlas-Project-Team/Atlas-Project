@@ -12,7 +12,7 @@
             display: block;
         }
 
-        #canvasOverlay {
+        #canvasOverlay, #loading {
             position: fixed;
             left: 0;
             top: 0;
@@ -29,6 +29,21 @@
             position: fixed;
             bottom: 0;
             left: 5px;
+        }
+
+        #loading {
+            background-color: black;
+            width: 100vw;
+            height: 100vw;
+            z-index: 999;
+        }
+
+        #loading > h1 {
+            position: fixed;
+            top: 20vw;
+            width: 100vw;
+            text-align: center;
+            font-size: 90pt;
         }
     </style>
 </head>
@@ -80,6 +95,9 @@
     }
 
 </script>
+<div id="loading">
+    <h1>LOADING...</h1>
+</div>
 <div id="canvasOverlay">
     <h3 id="scale"></h3>
 </div>
