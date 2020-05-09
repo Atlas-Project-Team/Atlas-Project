@@ -9,6 +9,24 @@ interface Asteroid {
     rotationAmount: THREE.Vector3;
 }
 
+let times: number[] = [];
+let fps: number;
+
+function refreshLoop() {
+    window.requestAnimationFrame(() => {
+        const now = performance.now();
+        while (times.length > 0 && times[0] <= now - 1000) {
+            times.shift();
+        }
+        times.push(now);
+        fps = times.length;
+        document.getElementById('fps').innerText = `${fps.toString()} FPS`;
+        refreshLoop();
+    });
+}
+
+refreshLoop();
+
 let mapData: { objectId: number; pos: { x: number; y: number; z: number }; modelPath: string; objectInfo: object; scale: number; name: string }[];
 let asteroidsToLoad: number;
 let asteroidA: THREE.Object3D;
