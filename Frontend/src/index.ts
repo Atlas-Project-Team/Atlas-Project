@@ -1,22 +1,41 @@
-let THREE = require('three');
-let {OrbitControls} = require('three/examples/jsm/controls/OrbitControls.js');
-let {GLTFLoader} = require('three/examples/jsm/loaders/GLTFLoader');
-let datgui = require('dat.gui');
-let Stats = require('stats-js');
+import * as THREE from "three";
+import 'three/examples/jsm/controls/OrbitControls.js';
+import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
+import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
+import * as datgui from 'dat.gui';
 
+interface Asteroid {
+    object: THREE.Object3D;
+    rotationAmount: THREE.Vector3;
+}
 
-let stats, mapData, asteroidsToLoad, asteroidA, asteroidB, asteroidC, asteroidLODs;
-let scene, camera, renderer, controls, settings, uniforms, asteroids, spawnedAsteroids;
-let cameraFocus, cameraPosition, cameraZoomDistance, zoomFactor, grid;
+let mapData: { objectId: number; pos: { x: number; y: number; z: number }; modelPath: string; objectInfo: object; scale: number; name: string }[];
+let asteroidsToLoad: number;
+let asteroidA: THREE.Object3D;
+let asteroidB: THREE.Object3D;
+let asteroidC: THREE.Object3D;
+let asteroidLODs: THREE.Object3D[];
+let scene: THREE.Scene;
+let camera: THREE.PerspectiveCamera;
+let renderer: THREE.Renderer;
+let controls: OrbitControls;
+let settings: { zoomIncrement: number; asteroidCount: number };
+let uniforms: { texture: { value: THREE.Texture }; zoomDistance: { value: number }; scale: { value: number }; control: { value: THREE.Vector3 }; };
+let asteroids: Asteroid[];
+let spawnedAsteroids: number;
+let cameraFocus: THREE.Vector3;
+let cameraPosition: THREE.Vector3;
+let cameraZoomDistance: number;
+let zoomFactor: number;
+let grid: THREE.Object3D;
+let sceneLights: { sun: THREE.Object3D | null; stars: THREE.Object3D | null } = {sun: null, stars: null};
 
-const GCPAssets = "http://storage.googleapis.com/project-atlas-assets/HR_Assets/";
+const GCPAssets: string = "http://storage.googleapis.com/project-atlas-assets/HR_Assets/";
 
 init();
 animate();
 
 function init() {
-    stats = Stats();
-    document.getElementById("canvasOverlay").appendChild(stats.dom);
     // Dummy Map data to test on before we add in
     mapData = [
         {
@@ -167,13 +186,13 @@ function init() {
         ]);
 
     // Define a directional light source coming from approximately where the main star is on the cubemap
-    scene.sun = new THREE.DirectionalLight(0xffffff, 0.9);
-    scene.sun.position.set(-1, -0.15, -0.1);
-    scene.add(scene.sun);
+    sceneLights.sun = new THREE.DirectionalLight(0xffffff, 0.9);
+    sceneLights.sun.position.set(-1, -0.15, -0.1);
+    scene.add(sceneLights.sun);
 
     // Add a soft ambient light source to illuminate objects indirectly, as if from other smaller stars.
-    scene.stars = new THREE.AmbientLight(0x404040, 0.5);
-    scene.add(scene.stars);
+    sceneLights.stars = new THREE.AmbientLight(0x404040, 0.5);
+    scene.add(sceneLights.stars);
 
     // Position the camera above and behind the scene.
     camera.position.set(0, 4000, 20000);
@@ -182,7 +201,7 @@ function init() {
 
 // Animate subroutine, called each frame to update the scene.
 function animate() {
-    stats.begin();
+    //stats.begin();
     // Schedule a new frame at the monitor's refresh rate
     requestAnimationFrame(animate);
 
@@ -208,22 +227,24 @@ function animate() {
     while (spawnedAsteroids !== settings.asteroidCount && asteroidsToLoad === 0) {
         if (asteroids.length < settings.asteroidCount) {
             // Add more asteroids
-            let lod = asteroidLODs[Math.floor(Math.random() * asteroidLODs.length)];
-            lod = lod.clone();
+            let lod: Asteroid = {
+                object: asteroidLODs[Math.floor(Math.random() * asteroidLODs.length)],
+                rotationAmount: new THREE.Vector3(Math.random() * 0.0075, Math.random() * 0.0075, Math.random() * 0.0075)
+            };
+            lod.object = lod.object.clone();
 
-            let radius = 14000 + Math.random() * 2200;
-            let angle = Math.random() * 2 * Math.PI;
-            lod.position.set(Math.cos(angle) * radius + (Math.random() - 0.5) * 1000, (Math.random() - 0.5) * 1000, Math.sin(angle) * radius + (Math.random() - 0.5) * 1000);
-            lod.scale.set((Math.random() + 0.5) * 100, (Math.random() + 0.5) * 100, (Math.random() + 0.5) * 100);
-            lod.rotation.set(Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI);
-            lod.rotationAmounts = new THREE.Vector3(Math.random() * 0.0075, Math.random() * 0.0075, Math.random() * 0.0075);
+            let radius: number = 14000 + Math.random() * 2200;
+            let angle: number = Math.random() * 2 * Math.PI;
+            lod.object.position.set(Math.cos(angle) * radius + (Math.random() - 0.5) * 1000, (Math.random() - 0.5) * 1000, Math.sin(angle) * radius + (Math.random() - 0.5) * 1000);
+            lod.object.scale.set((Math.random() + 0.5) * 100, (Math.random() + 0.5) * 100, (Math.random() + 0.5) * 100);
+            lod.object.rotation.set(Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI);
             asteroids.push(lod);
-            scene.add(asteroids[asteroids.length - 1]);
+            scene.add(asteroids[asteroids.length - 1].object);
 
             spawnedAsteroids++;
         } else if (asteroids.length > settings.asteroidCount) {
             // Remove some asteroids
-            scene.remove(asteroids.pop());
+            scene.remove(asteroids.pop().object);
             spawnedAsteroids--;
         }
     }
@@ -231,11 +252,11 @@ function animate() {
     // Rotate the asteroids
     for (let asteroid in asteroids) {
         // noinspection JSUnfilteredForInLoop *Shut up WebStorm*
-        asteroids[asteroid].rotation.x += asteroids[asteroid].rotationAmounts.x;
+        asteroids[asteroid].object.rotation.x += asteroids[asteroid].rotationAmount.x;
         // noinspection JSUnfilteredForInLoop *Shut up WebStorm*
-        asteroids[asteroid].rotation.y += asteroids[asteroid].rotationAmounts.y;
+        asteroids[asteroid].object.rotation.y += asteroids[asteroid].rotationAmount.y;
         // noinspection JSUnfilteredForInLoop *Shut up WebStorm*
-        asteroids[asteroid].rotation.z += asteroids[asteroid].rotationAmounts.z;
+        asteroids[asteroid].object.rotation.z += asteroids[asteroid].rotationAmount.z;
     }
 
     // Output a scale in text to a h1 element on top of the canvas
@@ -258,7 +279,7 @@ function animate() {
 
     // Render this frame.
     renderer.render(scene, camera);
-    stats.end();
+    //stats.end();
 }
 
 document.body.onresize = () => {
@@ -280,7 +301,7 @@ document.body.onload = () => {
     document.getElementById("loading").remove();
 };
 
-function loadNewAsteroid(model) {
+function loadNewAsteroid(model: string[]) {
     let asteroidLoader = new GLTFLoader();
 
     let lod = new THREE.LOD();
