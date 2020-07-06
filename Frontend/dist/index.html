@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <title>Atlas Project</title>
     <link href="main.css" rel="stylesheet">
+    <!-- Bootstrap CSS Framework -->
+    <link crossorigin="anonymous" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+          integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" rel="stylesheet">
+    <script crossorigin="anonymous" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+            src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script crossorigin="anonymous" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+            src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script crossorigin="anonymous" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+            src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
 </head>
 <body>
 <script id="vertexshader" type="x-shader/x-vertex">
@@ -72,9 +81,16 @@
         <p>LOADING</p>
     </div>
 </div>
-<div id="canvasOverlay">
-    <h3 id="scale"></h3>
-    <p id="fps"></p>
+<div class="bg-dark" id="contentArea">
+    <div id="sidebar">
+        <h1 class="mt-1 text-light ml-1">Atlas Map</h1>
+    </div>
+    <div id="canvas">
+        <div id="canvasOverlay">
+            <h5 id="scale"></h5>
+            <p id="fps"></p>
+        </div>
+    </div>
 </div>
 <script src="bundle.js"></script>
 </body>

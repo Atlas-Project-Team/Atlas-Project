@@ -189,7 +189,7 @@ function init() {
 
 
     renderer.setSize(window.innerWidth, window.innerHeight); // Set renderer object (canvas element) to match window size
-    document.body.appendChild(renderer.domElement); // Add the canvas element to the page.
+    document.getElementById('canvas').appendChild(renderer.domElement); // Add the canvas element to the page.
 
     // Load in a space cube map at /Assets/skybox/ to act as a backdrop.
     scene.background = new THREE.CubeTextureLoader()
@@ -247,7 +247,7 @@ function animate() {
             // Add more asteroids
             let lod: Asteroid = {
                 object: asteroidLODs[Math.floor(Math.random() * asteroidLODs.length)],
-                rotationAmount: new THREE.Vector3(Math.random() * 0.0075, Math.random() * 0.0075, Math.random() * 0.0075)
+                rotationAmount: new THREE.Vector3(Math.random() * 0.0015, Math.random() * 0.0015, Math.random() * 0.0015)
             };
             lod.object = lod.object.clone();
 
@@ -303,9 +303,9 @@ function animate() {
 document.body.onresize = () => {
 
     // Reset the camera and viewport to match the window dimensions if it is resized.
-    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.aspect = (window.innerWidth * 0.85) / window.innerHeight;
     camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize((window.innerWidth * 0.85), window.innerHeight);
 
 };
 
