@@ -13,10 +13,14 @@ module.exports = {
     },
     resolve: {
         extensions: ['.tsx', '.ts', '.js'],
+        alias: {
+            'vue$': 'vue/dist/vue.esm.js'
+        },
     },
     output: {
         filename: 'bundle.js',
         path: path.resolve(__dirname, 'dist'),
     },
-    watch: true
+    watch: true,
+    mode: 'development'
 };

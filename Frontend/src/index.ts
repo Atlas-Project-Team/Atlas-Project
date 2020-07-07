@@ -3,6 +3,36 @@ import 'three/examples/jsm/controls/OrbitControls.js';
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import * as datgui from 'dat.gui';
+import Vue from 'vue';
+
+let sidebarApp = new Vue({
+    el: '#sidebar',
+    data: {
+        map: []
+    }
+});
+
+Vue.component('mapItem', {
+    props: ['item'],
+    template: `
+        <div class="card text-white bg-dark border-light mt-1 mb-1">
+            <div class="card-header">
+                <h4>
+                    <a class="card-title text-white" data-toggle="collapse" v-bind:href="'#item-'+item.objectId"
+                       role="button">
+                        {{item.name}}
+                    </a>
+                </h4>
+            </div>
+            <div class="collapse card-body" v-bind:id="'item-'+item.objectId">
+                <h5 class="mb-2">Object Details:</h5>
+                <p v-for="(property, key) in item.objectInfo" class="card-text mb-0">
+                    <strong>{{key}}</strong>: {{property}}
+                </p>
+            </div>
+        </div>
+    `
+});
 
 interface Asteroid {
     object: THREE.Object3D;
@@ -87,6 +117,8 @@ function init() {
             }
         }
     ];
+
+    sidebarApp.map = mapData;
 
     asteroidsToLoad = 12;
 

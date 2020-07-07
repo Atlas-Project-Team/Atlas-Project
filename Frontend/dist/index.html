@@ -82,8 +82,13 @@
     </div>
 </div>
 <div class="bg-dark" id="contentArea">
-    <div id="sidebar">
-        <h1 class="mt-1 text-light ml-1">Atlas Map</h1>
+    <div class="p-1" id="sidebar">
+        <h1 class="mt-0 text-light">Atlas Map</h1>
+        <map-item
+                v-bind:item="item"
+                v-bind:key="item.objectId"
+                v-for="item in map"
+        ></map-item>
     </div>
     <div id="canvas">
         <div id="canvasOverlay">

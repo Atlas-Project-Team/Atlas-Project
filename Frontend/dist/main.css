@@ -2,44 +2,39 @@ body {
     margin: 0;
     overflow: hidden;
 }
-
 canvas {
     display: block;
 }
-
 #contentArea {
     padding: 0;
     margin: 0;
     width: 100vw;
     height: 100vh;
 }
-
 #canvas {
-    width: 85vw;
+    width: 80vw;
     height: 100vh;
     margin: 0;
     padding: 0;
     float: right;
 }
-
 #canvasOverlay {
     z-index: 1;
-    width: 85vw;
+    width: 80vw;
     height: 100vh;
     position: absolute;
     pointer-events: none;
     color: #fff;
     font-family: sans-serif;
 }
-
 #sidebar {
-    width: 15vw;
+    width: 20vw;
     height: 100vh;
     margin: 0;
     padding: 0;
     float: left;
+    color: #fff;
 }
-
 #loading {
     position: fixed;
     left: 0;
@@ -47,7 +42,6 @@ canvas {
     color: #fff;
     font-family: sans-serif;
 }
-
 #canvasOverlay > h1 {
     margin: 0;
     padding: 20px;
