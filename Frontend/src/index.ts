@@ -29,6 +29,9 @@ Vue.component('mapItem', {
                 <p v-for="(property, key) in item.objectInfo" class="card-text mb-0">
                     <strong>{{key}}</strong>: {{property}}
                 </p>
+                <button type="button" class="btn btn-outline-light text-white mt-2"
+                        v-bind:onclick="'window.lookAt('+item.objectId+');'">Look at
+                </button>
             </div>
         </div>
     `
@@ -37,6 +40,12 @@ Vue.component('mapItem', {
 interface Asteroid {
     object: THREE.Object3D;
     rotationAmount: THREE.Vector3;
+}
+
+declare global {
+    interface Window {
+        lookAt: any;
+    }
 }
 
 let times: number[] = [];
@@ -57,7 +66,7 @@ function refreshLoop() {
 
 refreshLoop();
 
-let mapData: { objectId: number; pos: { x: number; y: number; z: number }; modelPath: string; objectInfo: object; scale: number; name: string }[];
+let mapData: { objectId: number; pos: { x: number; y: number; z: number }; modelPath: string; objectInfo: object; scale: number; name: string, defaultZoom: number }[];
 let asteroidsToLoad: number;
 let asteroidA: THREE.Object3D;
 let asteroidB: THREE.Object3D;
@@ -83,6 +92,24 @@ const GCPAssets: string = "http://storage.googleapis.com/project-atlas-assets/HR
 init();
 animate();
 
+function lookAt(objectId: number) {
+    let object = mapData.find((item) => {
+        return item.objectId === objectId
+    });
+    controls.target.set(object.pos.x, object.pos.y, object.pos.z);
+    let cameraPos = camera.position;
+    cameraPos.sub(controls.target);
+    let zoomFactor = object.defaultZoom / cameraPos.distanceTo(new THREE.Vector3(0, 0, 0));
+    cameraPos.multiplyScalar(zoomFactor);
+    cameraPos.add(controls.target);
+    camera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
+    controls.autoRotate = true;
+    controls.autoRotateSpeed = 0.5;
+
+}
+
+window.lookAt = lookAt;
+
 function init() {
     // Dummy Map data to test on before we add in
     mapData = [
@@ -99,7 +126,8 @@ function init() {
                 "Type": "Gas Giant"
             },
             "scale": 11144.9,
-            "name": "Eos"
+            "name": "Eos",
+            "defaultZoom": 20000
         },
         {
             "scale": 0.001,
@@ -114,7 +142,8 @@ function init() {
             "objectInfo": {
                 "Object": "Station",
                 "Type": "Neutral"
-            }
+            },
+            "defaultZoom": 500
         }
     ];
 
@@ -141,6 +170,11 @@ function init() {
         zoomIncrement: 10, // The factor that the grid is scaled by. By default it is 10, i.e. 1x1 grid -> 10x10 grid -> 100x100 grid
         asteroidCount: 1000 // The number of asteroids to render around Eos
     };
+
+    // stop autorotate after the first interaction
+    controls.addEventListener('start', function () {
+        controls.autoRotate = false;
+    });
 
     // Initialize uniforms.
     uniforms = {

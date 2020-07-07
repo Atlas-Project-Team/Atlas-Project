@@ -25,7 +25,8 @@
           "Type": "Gas Giant"
         },
         "scale": 10.0,
-        "name": "Eos"
+        "name": "Eos",
+        "defaultZoom": 20000
       },
       {
         "scale": 1.0,
@@ -40,7 +41,8 @@
         "objectInfo": {
           "Object": "Station",
           "Type": "Neutral"
-        }
+        },
+        "defaultZoom": 500
       }
     ],
     "additionalProperties": false,
@@ -69,6 +71,15 @@
         "description": "The name of the Starbase object to be shown on the map.",
         "examples": [
           "Eos"
+        ]
+      },
+      "defaultZoom": {
+        "$id": "#/items/properties/defaultZoom",
+        "type": "number",
+        "title": "Default Zoom Distance",
+        "description": "The zoom Distance for the map to snap to when looking at this object, e.g. from a link.",
+        "examples": [
+          20000
         ]
       },
       "pos": {

@@ -52,10 +52,11 @@ canvas {
     left: 5px;
 }
 #loading {
-  background-color: #15171d;
-  width: 100vw;
-  height: 100vw;
-  z-index: 999;
+    background-color: #15171d;
+    width: 100vw;
+    height: 100vw;
+    z-index: 999;
+    pointer-events: none;
 }
 #loading > h1 {
   position: fixed;
@@ -211,15 +212,15 @@ body {
   height: 15px;
 }
 .content p {
-  color: #bacbd9;
-  font-size: 14pt;
-  z-index: 2;
-  position: absolute;
-  bottom: -20px;
-  font-family: Share, serif;
-  animation: text 4s ease infinite;
-  width: 100px;
-  text-align: center;
+    color: #bacbd9;
+    font-size: 14pt;
+    z-index: 2;
+    position: absolute;
+    bottom: -20px;
+    font-family: Share, sans-serif;
+    animation: text 4s ease infinite;
+    width: 100px;
+    text-align: center;
 }
 @-moz-keyframes planet {
   0% {
