@@ -141,7 +141,8 @@ function init() {
             "modelPath": GCPAssets + "models/Station/",
             "objectInfo": {
                 "Object": "Station",
-                "Type": "Neutral"
+                "Type": "Starter Station",
+                "Alignment": "Neutral"
             },
             "defaultZoom": 500
         }
