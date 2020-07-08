@@ -164,6 +164,23 @@
         ],
         "additionalProperties": true,
         "required": []
+      },
+      "children": {
+        "$id": "#/items/properties/objectInfo",
+        "type": "array",
+        "title": "Children",
+        "description": "An array of all the ObjectIds that represent children of this item.",
+        "default": [],
+        "examples": [
+          [
+            1
+          ],
+          [
+            43,
+            23,
+            12
+          ]
+        ]
       }
     }
   }

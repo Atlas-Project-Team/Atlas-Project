@@ -86,6 +86,7 @@
         <h1 class="mt-0 text-light">Atlas Map</h1>
         <map-item
                 v-bind:item="item"
+                v-bind:map-data="map"
                 v-bind:key="item.objectId"
                 v-for="item in map"
         ></map-item>

@@ -13,22 +13,35 @@ let sidebarApp = new Vue({
 });
 
 Vue.component('mapItem', {
-    props: ['item'],
+    props: ['item', 'mapData'],
     template: `
-        <div class="card text-white bg-dark border-light mt-1 mb-1">
+        <div class="card text-white bg-dark border-light mt-1 mb-1" v-bind:id="'item-'+item.objectId">
             <div class="card-header">
                 <h4>
-                    <a class="card-title text-white" data-toggle="collapse" v-bind:href="'#item-'+item.objectId"
+                    <a class="card-title text-white" data-toggle="collapse"
+                       v-bind:href="'#item-collapse-'+item.objectId"
                        role="button">
                         {{item.name}}
                     </a>
                 </h4>
             </div>
-            <div class="collapse card-body" v-bind:id="'item-'+item.objectId">
+            <div class="collapse card-body" v-bind:id="'item-collapse-'+item.objectId">
                 <h5 class="mb-2">Object Details:</h5>
                 <p v-for="(property, key) in item.objectInfo" class="card-text mb-0">
                     <strong>{{key}}</strong>: {{property}}
                 </p>
+                <hr>
+                <h5 v-if="item.children.length > 0">Children</h5>
+                <div v-if="item.children.length > 0" class="list-group-flush bg-dark border-light pl-0">
+                    <button v-for="child in item.children" v-bind:key="child"
+                            class="list-group-item text-white bg-dark border-light"
+                            v-bind:onclick="'window.openItem('+child.toString()+');'">
+                        {{mapData.find((item) => {
+                        return item.objectId === child
+                    }).name}}
+                    </button>
+                </div>
+                <hr v-if="item.children.length > 0">
                 <button type="button" class="btn btn-outline-light text-white mt-2"
                         v-bind:onclick="'window.lookAt('+item.objectId+');'">Look at
                 </button>
@@ -43,8 +56,14 @@ interface Asteroid {
 }
 
 declare global {
+    // noinspection JSUnusedGlobalSymbols
     interface Window {
-        lookAt: any;
+        lookAt: (arg: number) => void;
+        openItem: (arg: number) => void;
+    }
+
+    interface JQuery {
+        collapse: (arg: string) => void;
     }
 }
 
@@ -66,7 +85,7 @@ function refreshLoop() {
 
 refreshLoop();
 
-let mapData: { objectId: number; pos: { x: number; y: number; z: number }; modelPath: string; objectInfo: object; scale: number; name: string, defaultZoom: number }[];
+let mapData: { objectId: number; pos: { x: number; y: number; z: number }; modelPath: string; objectInfo: object; scale: number; name: string, defaultZoom: number, children: number[] }[];
 let asteroidsToLoad: number;
 let asteroidA: THREE.Object3D;
 let asteroidB: THREE.Object3D;
@@ -105,13 +124,19 @@ function lookAt(objectId: number) {
     camera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
     controls.autoRotate = true;
     controls.autoRotateSpeed = 0.5;
-
 }
 
+function openItem(objectId: number) {
+    $('.collapse:not(#item-collapse-' + objectId.toString() + ')').collapse('hide');
+    $('#item-collapse-' + objectId.toString()).collapse('show');
+    location.href = '#item-' + objectId.toString();
+}
+
+window.openItem = openItem;
 window.lookAt = lookAt;
 
 function init() {
-    // Dummy Map data to test on before we add in
+    // Dummy Map data to test on before we add in real data
     mapData = [
         {
             "objectId": 0,
@@ -127,7 +152,8 @@ function init() {
             },
             "scale": 11144.9,
             "name": "Eos",
-            "defaultZoom": 20000
+            "defaultZoom": 20000,
+            "children": [1]
         },
         {
             "scale": 0.001,
@@ -144,7 +170,8 @@ function init() {
                 "Type": "Starter Station",
                 "Alignment": "Neutral"
             },
-            "defaultZoom": 500
+            "defaultZoom": 500,
+            "children": []
         }
     ];
 
@@ -240,7 +267,7 @@ function init() {
     spawnedAsteroids = 0;
 
     for (let mapObject in mapData) {
-        // noinspection JSUnfilteredForInLoop *because JSON Validation is way easier*,JSUnusedLocalSymbols
+        // noinspection JSUnfilteredForInLoop ,JSUnusedLocalSymbols
         let {name, scale, objectId, pos, modelPath, objectInfo} = mapData[mapObject];
 
         let loader = new GLTFLoader();
