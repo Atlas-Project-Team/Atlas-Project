@@ -107,6 +107,7 @@ let cameraZoomDistance: number;
 let zoomFactor: number;
 let grid: THREE.Object3D;
 let sceneLights: { sun: THREE.Object3D | null; stars: THREE.Object3D | null } = {sun: null, stars: null};
+let movement: { x: number[]; y: number[]; z: number[]; zoom: number[] } = {x: [], y: [], z: [], zoom: []};
 
 const GCPAssets: string = "http://storage.googleapis.com/project-atlas-assets/HR_Assets/";
 
@@ -144,15 +145,9 @@ function lookAt(objectId: number) {
     let object = mapData.find((item) => {
         return item.objectId === objectId
     });
-    controls.target.set(object.pos.x, object.pos.y, object.pos.z);
-    let cameraPos = camera.position;
-    cameraPos.sub(controls.target);
-    let zoomFactor = object.defaultZoom / cameraPos.distanceTo(new THREE.Vector3(0, 0, 0));
-    cameraPos.multiplyScalar(zoomFactor);
-    cameraPos.add(controls.target);
-    camera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
-    controls.autoRotate = true;
-    controls.autoRotateSpeed = 0.5;
+    movement = easeBetween(controls.target, new THREE.Vector3(object.pos.x, object.pos.y, object.pos.z), camera.position.distanceTo(controls.target), object.defaultZoom, fps * 3);
+    //controls.autoRotate = true;
+    //controls.autoRotateSpeed = 0.5;
 }
 
 function openItem(objectId: number) {
@@ -165,6 +160,24 @@ function openItem(objectId: number) {
 
 window.openItem = openItem;
 window.lookAt = lookAt;
+
+function easeBetween(start: THREE.Vector3, finish: THREE.Vector3, startZoom: number, finishZoom: number, duration: number) {
+    let ease = (t: number) => t < .5 ? 16 * t * t * t * t * t : 1 + 16 * (--t) * t * t * t * t;
+    let m: { x: number[]; y: number[]; z: number[]; zoom: number[] } = {x: [], y: [], z: [], zoom: []};
+    let d: { x: number; y: number; z: number; zoom: number } = {x: 0, y: 0, z: 0, zoom: 0};
+    d.x = finish.x - start.x;
+    d.y = finish.y - start.y;
+    d.z = finish.z - start.z;
+    d.zoom = finishZoom - startZoom;
+    for (let i = 0; i < duration; i++) {
+        let t: number = ease((i + 1) / duration) - ease(i / duration);
+        m.x.push(d.x * t);
+        m.y.push(d.y * t);
+        m.z.push(d.z * t);
+        m.zoom.push(d.zoom * t);
+    }
+    return m;
+}
 
 function init() {
     // Dummy Map data to test on before we add in real data
@@ -348,6 +361,27 @@ function animate() {
     // Schedule a new frame at the monitor's refresh rate
     requestAnimationFrame(animate);
 
+    cameraZoomDistance = camera.position.distanceTo(controls.target);
+
+    if (movement.x.length > 0) {
+        controls.target.x += movement.x.shift()
+    }
+    if (movement.y.length > 0) {
+        controls.target.y += movement.y.shift()
+    }
+    if (movement.z.length > 0) {
+        controls.target.z += movement.z.shift()
+    }
+    if (movement.zoom.length > 0) {
+        cameraZoomDistance += movement.zoom.shift()
+    }
+    // Reposition the camera at the correct zoom distance from the controls target
+    let cameraPos = camera.position;
+    cameraPos.sub(controls.target);
+    let zoomFactor = cameraZoomDistance / cameraPos.distanceTo(new THREE.Vector3(0, 0, 0));
+    cameraPos.multiplyScalar(zoomFactor);
+    cameraPos.add(controls.target);
+    camera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
 
     // Find the distance from the camera to the point it orbits around
     cameraFocus = controls.target;
