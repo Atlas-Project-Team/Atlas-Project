@@ -84,6 +84,10 @@
 <div class="bg-dark" id="contentArea">
     <div class="p-1" id="sidebar">
         <h1 class="mt-0 text-light">Atlas Map</h1>
+        <div class="input-group mb-3">
+            <input class="form-control text-white bg-dark border-light" id="search" onsubmit="" placeholder="Search"
+                   type="search">
+        </div>
         <map-item
                 v-bind:item="item"
                 v-bind:map-data="map"

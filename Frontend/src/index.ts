@@ -4,6 +4,7 @@ import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import * as datgui from 'dat.gui';
 import Vue from 'vue';
+import Fuse from 'fuse.js';
 
 let sidebarApp = new Vue({
     el: '#sidebar',
@@ -15,7 +16,7 @@ let sidebarApp = new Vue({
 Vue.component('mapItem', {
     props: ['item', 'mapData'],
     template: `
-        <div class="card text-white bg-dark border-light mt-1 mb-1" v-bind:id="'item-'+item.objectId">
+        <div class="map-item card text-white bg-dark border-light mt-1 mb-1" v-bind:id="'item-'+item.objectId">
             <div class="card-header">
                 <h4>
                     <a class="card-title text-white" data-toggle="collapse"
@@ -60,6 +61,7 @@ declare global {
     interface Window {
         lookAt: (arg: number) => void;
         openItem: (arg: number) => void;
+        fuse: any;
     }
 
     interface JQuery {
@@ -111,6 +113,33 @@ const GCPAssets: string = "http://storage.googleapis.com/project-atlas-assets/HR
 init();
 animate();
 
+const fuse = new Fuse(mapData, {
+    keys: ['name']
+});
+
+window.fuse = fuse;
+
+document.getElementById('search').addEventListener('input', search);
+
+function search(e: Event = undefined) {
+    let search = (<HTMLInputElement>document.getElementById('search')).value;
+    let results = fuse.search(search).map(value => {
+        return value.item.objectId.toString()
+    });
+    let mapItems = document.getElementsByClassName('map-item');
+    let l = mapItems.length;
+    for (let i = 0; i < l; i++) {
+        let el = <HTMLElement>mapItems[i];
+        let objectId = el.id.substr(5);
+        if (results.includes(objectId) || search === "") {
+            el.style.display = "block";
+        } else {
+            el.style.display = "none";
+        }
+    }
+    $('.collapse').collapse('hide');
+}
+
 function lookAt(objectId: number) {
     let object = mapData.find((item) => {
         return item.objectId === objectId
@@ -127,9 +156,11 @@ function lookAt(objectId: number) {
 }
 
 function openItem(objectId: number) {
-    $('.collapse:not(#item-collapse-' + objectId.toString() + ')').collapse('hide');
+    (<HTMLInputElement>document.getElementById('search')).value = mapData.find(val => {
+        return val.objectId === objectId
+    }).name;
+    search();
     $('#item-collapse-' + objectId.toString()).collapse('show');
-    location.href = '#item-' + objectId.toString();
 }
 
 window.openItem = openItem;
