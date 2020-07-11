@@ -6,12 +6,51 @@ import * as datgui from 'dat.gui';
 import Vue from 'vue';
 import Fuse from 'fuse.js';
 
+declare module 'vue/types/vue' {
+    interface Vue {
+        map: { objectId: number; pos: { x: number; y: number; z: number }; modelPath: string; objectInfo: object; scale: number; name: string, defaultZoom: number, children: number[] }[],
+        searchQuery: string
+    }
+}
+
+declare global {
+    // noinspection JSUnusedGlobalSymbols
+    interface Window {
+        lookAt: (arg: number) => void;
+        openItem: (arg: number) => void;
+    }
+
+    interface JQuery {
+        collapse: (arg: string) => void;
+    }
+}
+
+
 let sidebarApp = new Vue({
     el: '#sidebar',
     data: {
-        map: []
+        map: [],
+        searchQuery: ""
+    },
+    computed: {
+        searchResults: function (): string[] {
+            return this.fuse.search(this.searchQuery).map((value: any) => {
+                return value.item.objectId.toString()
+            })
+        },
+        fuse: function (): any {
+            return new Fuse(this.map, {
+                keys: ['name']
+            });
+        }
+    },
+    watch: {
+        searchQuery: function () {
+            $('.collapse').collapse('hide');
+        }
     }
 });
+
 
 Vue.component('mapItem', {
     props: ['item', 'mapData'],
@@ -56,19 +95,6 @@ interface Asteroid {
     rotationAmount: THREE.Vector3;
 }
 
-declare global {
-    // noinspection JSUnusedGlobalSymbols
-    interface Window {
-        lookAt: (arg: number) => void;
-        openItem: (arg: number) => void;
-        fuse: any;
-    }
-
-    interface JQuery {
-        collapse: (arg: string) => void;
-    }
-}
-
 let times: number[] = [];
 let fps: number;
 
@@ -104,7 +130,6 @@ let spawnedAsteroids: number;
 let cameraFocus: THREE.Vector3;
 let cameraPosition: THREE.Vector3;
 let cameraZoomDistance: number;
-let zoomFactor: number;
 let grid: THREE.Object3D;
 let sceneLights: { sun: THREE.Object3D | null; stars: THREE.Object3D | null } = {sun: null, stars: null};
 let movement: { x: number[]; y: number[]; z: number[]; zoom: number[] } = {x: [], y: [], z: [], zoom: []};
@@ -114,32 +139,6 @@ const GCPAssets: string = "http://storage.googleapis.com/project-atlas-assets/HR
 init();
 animate();
 
-const fuse = new Fuse(mapData, {
-    keys: ['name']
-});
-
-window.fuse = fuse;
-
-document.getElementById('search').addEventListener('input', search);
-
-function search(e: Event = undefined) {
-    let search = (<HTMLInputElement>document.getElementById('search')).value;
-    let results = fuse.search(search).map(value => {
-        return value.item.objectId.toString()
-    });
-    let mapItems = document.getElementsByClassName('map-item');
-    let l = mapItems.length;
-    for (let i = 0; i < l; i++) {
-        let el = <HTMLElement>mapItems[i];
-        let objectId = el.id.substr(5);
-        if (results.includes(objectId) || search === "") {
-            el.style.display = "block";
-        } else {
-            el.style.display = "none";
-        }
-    }
-    $('.collapse').collapse('hide');
-}
 
 function lookAt(objectId: number) {
     let object = mapData.find((item) => {
@@ -151,10 +150,9 @@ function lookAt(objectId: number) {
 }
 
 function openItem(objectId: number) {
-    (<HTMLInputElement>document.getElementById('search')).value = mapData.find(val => {
+    sidebarApp.searchQuery = mapData.find(val => {
         return val.objectId === objectId
     }).name;
-    search();
     $('#item-collapse-' + objectId.toString()).collapse('show');
 }
 
