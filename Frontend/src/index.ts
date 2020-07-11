@@ -6,12 +6,7 @@ import * as datgui from 'dat.gui';
 import Vue from 'vue';
 import Fuse from 'fuse.js';
 
-declare module 'vue/types/vue' {
-    interface Vue {
-        map: { objectId: number; pos: { x: number; y: number; z: number }; modelPath: string; objectInfo: object; scale: number; name: string, defaultZoom: number, children: number[] }[],
-        searchQuery: string
-    }
-}
+type mapItem = { objectId: number; pos: { x: number; y: number; z: number }; modelPath: string; objectInfo: { [key: string]: any }; scale: number; name: string, defaultZoom: number, children: number[] };
 
 declare global {
     // noinspection JSUnusedGlobalSymbols
@@ -25,12 +20,24 @@ declare global {
     }
 }
 
+declare module 'vue/types/vue' {
+    interface Vue {
+        map: mapItem[],
+        searchQuery: string,
+        currentFilter: string,
+        currentFilterValue: string,
+        currentFilters: { [key: string]: string }
+    }
+}
 
 let sidebarApp = new Vue({
     el: '#sidebar',
     data: {
         map: [],
-        searchQuery: ""
+        searchQuery: "",
+        currentFilter: "Filter",
+        currentFilterValue: "Value",
+        currentFilters: {}
     },
     computed: {
         searchResults: function (): string[] {
@@ -42,10 +49,59 @@ let sidebarApp = new Vue({
             return new Fuse(this.map, {
                 keys: ['name']
             });
+        },
+        filters: function (): string[] {
+            let filters: string[] = [];
+            this.map.forEach((item: mapItem) => {
+                Object.keys(item.objectInfo).forEach(key => {
+                    if (!filters.includes(key)) {
+                        filters.push(key)
+                    }
+                })
+            });
+            return filters;
+        }
+    },
+    methods: {
+        getFilters: function (filter: string): string[] {
+            let filters: string[] = [];
+            this.map.forEach((item: mapItem) => {
+                if (Object.keys(item.objectInfo).includes(filter)) {
+                    filters.push(item.objectInfo[filter].toString())
+                }
+            });
+            return filters
+        },
+        createFilter: function (filter: string, value: string): void {
+            if (filter === "Filter" || value == "Value") {
+                return
+            }
+            this.currentFilters[filter] = value;
+            this.currentFilter = "Filter";
+            this.currentFilterValue = "Value";
+            return
+        },
+        deleteFilter: function (filter: string): void {
+            if (Object.keys(this.currentFilters).includes(filter)) {
+                Vue.delete(this.currentFilters, filter)
+            }
+            return
+        },
+        checkFilter: function (item: mapItem): boolean {
+            for (let filter in this.currentFilters) {
+                if (!item.objectInfo.hasOwnProperty(filter)) {
+                    return false
+                } else {
+                    if (item.objectInfo[filter] !== this.currentFilters[filter]) {
+                        return false
+                    }
+                }
+            }
+            return true
         }
     },
     watch: {
-        searchQuery: function () {
+        searchQuery: function (): void {
             $('.collapse').collapse('hide');
         }
     }
@@ -113,7 +169,7 @@ function refreshLoop() {
 
 refreshLoop();
 
-let mapData: { objectId: number; pos: { x: number; y: number; z: number }; modelPath: string; objectInfo: object; scale: number; name: string, defaultZoom: number, children: number[] }[];
+let mapData: mapItem[];
 let asteroidsToLoad: number;
 let asteroidA: THREE.Object3D;
 let asteroidB: THREE.Object3D;
