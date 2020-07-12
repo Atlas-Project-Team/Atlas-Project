@@ -5,14 +5,17 @@ import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import * as datgui from 'dat.gui';
 import Vue from 'vue';
 import Fuse from 'fuse.js';
+import * as firebase from 'firebase/app';
+import 'firebase/analytics';
+import 'firebase/firestore';
 
-type mapItem = { objectId: number; pos: { x: number; y: number; z: number }; modelPath: string; objectInfo: { [key: string]: any }; scale: number; name: string, defaultZoom: number, children: number[] };
+type mapItem = { objectId: string; pos: { x: number; y: number; z: number }; modelPath: string; objectInfo: { [key: string]: any }; scale: number; name: string, defaultZoom: number, children: object[] };
 
 declare global {
     // noinspection JSUnusedGlobalSymbols
     interface Window {
-        lookAt: (arg: number) => void;
-        openItem: (arg: number) => void;
+        lookAt: (arg: string) => void;
+        openItem: (arg: string) => void;
     }
 
     interface JQuery {
@@ -29,6 +32,22 @@ declare module 'vue/types/vue' {
         currentFilters: { [key: string]: string }
     }
 }
+
+const firebaseConfig = {
+    apiKey: "AIzaSyButkqFXtrI90FUM-l7O-nWz-3TxIwd_0U",
+    authDomain: "atlas-project-274801.firebaseapp.com",
+    databaseURL: "https://atlas-project-274801.firebaseio.com",
+    projectId: "atlas-project-274801",
+    storageBucket: "atlas-project-274801.appspot.com",
+    messagingSenderId: "807372296549",
+    appId: "1:807372296549:web:b1e8fc3be8c2a27488918c",
+    measurementId: "G-40XQC6G6E4"
+};
+
+firebase.initializeApp(firebaseConfig);
+firebase.analytics();
+
+const db = firebase.firestore();
 
 let sidebarApp = new Vue({
     el: '#sidebar',
@@ -129,17 +148,17 @@ Vue.component('mapItem', {
                 <hr>
                 <h5 v-if="item.children.length > 0">Children</h5>
                 <div v-if="item.children.length > 0" class="list-group-flush bg-dark border-light pl-0">
-                    <button v-for="child in item.children" v-bind:key="child"
+                    <button v-for="child in item.children" v-bind:key="child.id"
                             class="list-group-item text-white bg-dark border-light"
-                            v-bind:onclick="'window.openItem('+child.toString()+');'">
+                            v-bind:onclick="'window.openItem('+child.id+');'">
                         {{mapData.find((item) => {
-                        return item.objectId === child
+                        return item.objectId === child.id
                     }).name}}
                     </button>
                 </div>
                 <hr v-if="item.children.length > 0">
                 <button type="button" class="btn btn-outline-light text-white mt-2"
-                        v-bind:onclick="'window.lookAt('+item.objectId+');'">Look at
+                        v-bind:onclick="'window.lookAt(&quot;'+item.objectId+'&quot;);'">Look at
                 </button>
             </div>
         </div>
@@ -192,11 +211,15 @@ let movement: { x: number[]; y: number[]; z: number[]; zoom: number[] } = {x: []
 
 const GCPAssets: string = "http://storage.googleapis.com/project-atlas-assets/HR_Assets/";
 
-init();
-animate();
+init().then(() => {
+    animate();
+})
+    .catch(err => {
+        console.error(err);
+    });
 
 
-function lookAt(objectId: number) {
+function lookAt(objectId: string) {
     let object = mapData.find((item) => {
         return item.objectId === objectId
     });
@@ -205,7 +228,7 @@ function lookAt(objectId: number) {
     //controls.autoRotateSpeed = 0.5;
 }
 
-function openItem(objectId: number) {
+function openItem(objectId: string) {
     sidebarApp.searchQuery = mapData.find(val => {
         return val.objectId === objectId
     }).name;
@@ -233,45 +256,21 @@ function easeBetween(start: THREE.Vector3, finish: THREE.Vector3, startZoom: num
     return m;
 }
 
-function init() {
-    // Dummy Map data to test on before we add in real data
-    mapData = [
-        {
-            "objectId": 0,
-            "pos": {
-                "x": 0.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "modelPath": GCPAssets + "models/Neptune/",
-            "objectInfo": {
-                "Object": "Planet",
-                "Type": "Gas Giant"
-            },
-            "scale": 11144.9,
-            "name": "Eos",
-            "defaultZoom": 20000,
-            "children": [1]
-        },
-        {
-            "scale": 0.001,
-            "name": "Eos 222",
-            "objectId": 1,
-            "pos": {
-                "x": 15000.0,
-                "y": 0.0,
-                "z": 0.0
-            },
-            "modelPath": GCPAssets + "models/Station/",
-            "objectInfo": {
-                "Object": "Station",
-                "Type": "Starter Station",
-                "Alignment": "Neutral"
-            },
-            "defaultZoom": 500,
-            "children": []
-        }
-    ];
+async function init() {
+    mapData = [];
+
+    await db.collection("mapData").get().then((querySnapshot) => {
+        querySnapshot.forEach((doc) => {
+            let data = <mapItem>doc.data();
+            data.objectId = doc.id;
+            data.pos = {
+                x: data.pos.y,
+                y: data.pos.z,
+                z: data.pos.x
+            };
+            mapData.push(data);
+        });
+    });
 
     sidebarApp.map = mapData;
 
@@ -370,7 +369,7 @@ function init() {
 
         let loader = new GLTFLoader();
 
-        loader.load(modelPath + 'model.glb', (gltf) => {
+        loader.load(GCPAssets + modelPath + 'model.glb', (gltf) => {
             gltf.scene.scale.set(scale, scale, scale);
             gltf.scene.position.set(pos.x, pos.y, pos.z);
             scene.add(gltf.scene);
@@ -466,7 +465,7 @@ function animate() {
 
             let radius: number = 14000 + Math.random() * 2200;
             let angle: number = Math.random() * 2 * Math.PI;
-            lod.object.position.set(Math.cos(angle) * radius + (Math.random() - 0.5) * 1000, (Math.random() - 0.5) * 1000, Math.sin(angle) * radius + (Math.random() - 0.5) * 1000);
+            lod.object.position.set(Math.cos(angle) * radius + (Math.random() - 0.5) * 1000 + 15000, (Math.random() - 0.5) * 1000, Math.sin(angle) * radius + (Math.random() - 0.5) * 1000);
             lod.object.scale.set((Math.random() + 0.5) * 100, (Math.random() + 0.5) * 100, (Math.random() + 0.5) * 100);
             lod.object.rotation.set(Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI);
             asteroids.push(lod);
