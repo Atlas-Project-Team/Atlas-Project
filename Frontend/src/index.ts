@@ -33,6 +33,7 @@ declare module 'vue/types/vue' {
     }
 }
 
+// noinspection SpellCheckingInspection
 const firebaseConfig = {
     apiKey: "AIzaSyButkqFXtrI90FUM-l7O-nWz-3TxIwd_0U",
     authDomain: "atlas-project-274801.firebaseapp.com",
@@ -108,9 +109,11 @@ let sidebarApp = new Vue({
         },
         checkFilter: function (item: mapItem): boolean {
             for (let filter in this.currentFilters) {
+                // noinspection JSUnfilteredForInLoop
                 if (!item.objectInfo.hasOwnProperty(filter)) {
                     return false
                 } else {
+                    // noinspection JSUnfilteredForInLoop
                     if (item.objectInfo[filter] !== this.currentFilters[filter]) {
                         return false
                     }
@@ -151,8 +154,8 @@ Vue.component('mapItem', {
                     <button v-for="child in item.children" v-bind:key="child.id"
                             class="list-group-item text-white bg-dark border-light"
                             v-bind:onclick="'window.openItem(&quot;'+child.id+'&quot;);'">
-                        {{mapData.find((item) => {
-                        return item.objectId === child.id
+                        {{mapData.find((mapDataItem) => {
+                        return mapDataItem.objectId === child.id
                     }).name}}
                     </button>
                 </div>
@@ -263,6 +266,7 @@ async function init() {
         querySnapshot.forEach((doc) => {
             let data = <mapItem>doc.data();
             data.objectId = doc.id;
+            // noinspection JSSuspiciousNameCombination
             data.pos = {
                 x: data.pos.y,
                 y: data.pos.z,
