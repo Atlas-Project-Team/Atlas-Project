@@ -150,7 +150,7 @@ Vue.component('mapItem', {
                 <div v-if="item.children.length > 0" class="list-group-flush bg-dark border-light pl-0">
                     <button v-for="child in item.children" v-bind:key="child.id"
                             class="list-group-item text-white bg-dark border-light"
-                            v-bind:onclick="'window.openItem('+child.id+');'">
+                            v-bind:onclick="'window.openItem(&quot;'+child.id+'&quot;);'">
                         {{mapData.find((item) => {
                         return item.objectId === child.id
                     }).name}}
@@ -353,12 +353,6 @@ async function init() {
     }
 
     scene.add(grid);
-
-    geometry = new THREE.BoxGeometry();
-    let material = new THREE.MeshBasicMaterial({color: 0x00ff00});
-    let cube = new THREE.Mesh(geometry, material);
-    scene.add(cube);
-
 
     asteroids = [];
     spawnedAsteroids = 0;
