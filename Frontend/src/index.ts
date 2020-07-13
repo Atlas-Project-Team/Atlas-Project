@@ -459,8 +459,8 @@ function animate() {
 
             let radius: number = 14000 + Math.random() * 2200;
             let angle: number = Math.random() * 2 * Math.PI;
-            lod.object.position.set(Math.cos(angle) * radius + (Math.random() - 0.5) * 1000 + 15000, (Math.random() - 0.5) * 1000, Math.sin(angle) * radius + (Math.random() - 0.5) * 1000);
-            lod.object.scale.set((Math.random() + 0.5) * 100, (Math.random() + 0.5) * 100, (Math.random() + 0.5) * 100);
+            lod.object.position.set(Math.cos(angle) * radius + (Math.random() - 0.5) * 1000 + 15000, (Math.random() - 0.5) * 42, Math.sin(angle) * radius + (Math.random() - 0.5) * 1000);
+            lod.object.scale.set((Math.random() + 0.5) * 10, (Math.random() + 0.5) * 10, (Math.random() + 0.5) * 10);
             lod.object.rotation.set(Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI, Math.random() * 2 * Math.PI);
             asteroids.push(lod);
             scene.add(asteroids[asteroids.length - 1].object);
