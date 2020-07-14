@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Authentication</title>
+    <link href="auth.css" rel="stylesheet">
+    <!-- Bootstrap CSS Framework -->
+    <link crossorigin="anonymous" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+          integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" rel="stylesheet">
+    <script crossorigin="anonymous" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj"
+            src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script crossorigin="anonymous" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+            src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"></script>
+    <script crossorigin="anonymous" integrity="sha384-OgVRvuATP1z7JjHLkuOU7Xw704+h835Lr+6QL9UvYjZE3Ipu6Tp75j7Bh/kR0JKI"
+            src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div id="container">
+    <div id="login-box">
+        <form>
+            <h1 class="color-heading">Atlas Login</h1>
+            <p class="text-white pb-3">Please log in or sign up to access Atlas.</p>
+            <div class="w-100 inputContainer mt-2" id="emailInput">
+                <div class="bg-white inputIcon"></div>
+                <div style="width: 100%;">
+                    <span style="display:block;overflow:hidden"><input class="bg-transparent text-light p-2"
+                                                                       placeholder="Email Address"
+                                                                       style="width: 100%"
+                                                                       type="email"></span>
+                </div>
+            </div>
+            <div class="w-100 inputContainer mt-2 mb-4" id="passwordInput">
+                <div class="bg-white inputIcon"></div>
+                <div style="width: 100%;">
+                    <span style="display:block;overflow:hidden"><input class="bg-transparent text-light p-2"
+                                                                       placeholder="Password"
+                                                                       style="width: 100%"
+                                                                       type="password"></span>
+                </div>
+            </div>
+            <div class="pt-3">
+                <button class="btn btn-light">Sign In</button>
+                <button class="btn btn-outline-light">Sign Up</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script src="auth.js"></script>
+</body>
+</html>

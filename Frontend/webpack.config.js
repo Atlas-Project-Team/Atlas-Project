@@ -2,7 +2,8 @@ const path = require('path');
 
 module.exports = {
     entry: {
-        main: './src/index.ts'
+        main: './src/index.ts',
+        auth: './src/auth.ts'
     },
     module: {
         rules: [
