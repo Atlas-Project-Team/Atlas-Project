@@ -2,7 +2,6 @@ import * as THREE from "three";
 import 'three/examples/jsm/controls/OrbitControls.js';
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
-import * as datgui from 'dat.gui';
 import Vue from 'vue';
 import Fuse from 'fuse.js';
 import * as firebase from 'firebase/app';
@@ -532,12 +531,6 @@ document.body.onresize = () => {
     camera.updateProjectionMatrix();
     renderer.setSize((window.innerWidth * 0.85), window.innerHeight);
 
-};
-
-window.onload = () => {
-    const gui = new datgui.GUI();
-    gui.add(settings, "zoomIncrement").min(2).max(20).step(1);
-    gui.add(settings, "asteroidCount").min(0).max(10000).step(1);
 };
 
 document.body.onload = () => {
