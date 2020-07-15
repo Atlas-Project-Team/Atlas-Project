@@ -43,6 +43,8 @@ hr {
   padding: 0;
   float: left;
   color: white;
+  display: flex;
+  flex-direction: column;
 }
 
 #loading {
@@ -87,6 +89,11 @@ hr {
   top: 0;
   left: 5px;
   margin: 0;
+}
+
+#mapData {
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 @import url('https://fonts.googleapis.com/css2?family=Share:wght@700&display=swap');

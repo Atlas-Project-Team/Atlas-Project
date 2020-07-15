@@ -2,15 +2,12 @@ body {
     margin: 0;
     overflow: hidden;
 }
-
 canvas {
     display: block;
 }
-
 hr {
     background-color: #d3d3d3;
 }
-
 #contentArea {
     padding: 0;
     margin: 0;
@@ -40,6 +37,8 @@ hr {
     padding: 0;
     float: left;
     color: #fff;
+    display: flex;
+    flex-direction: column;
 }
 #loading {
     position: fixed;
@@ -71,6 +70,7 @@ hr {
   text-align: center;
   font-size: 90pt;
 }
+
 #fps {
     font-weight: bold;
     padding: 5px;
@@ -78,6 +78,11 @@ hr {
     top: 0;
     left: 5px;
     margin: 0;
+}
+
+#mapData {
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 @import url("https://fonts.googleapis.com/css2?family=Share:wght@700&display=swap");
 body {

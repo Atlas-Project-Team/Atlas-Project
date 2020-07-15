@@ -8,12 +8,14 @@ import Fuse from 'fuse.js';
 import * as firebase from 'firebase/app';
 import 'firebase/analytics';
 import 'firebase/firestore';
+import 'firebase/auth';
 
 type mapItem = { objectId: string; pos: { x: number; y: number; z: number }; modelPath: string; objectInfo: { [key: string]: any }; scale: number; name: string, defaultZoom: number, children: object[] };
 
 declare global {
     // noinspection JSUnusedGlobalSymbols
     interface Window {
+        signOut: () => void;
         lookAt: (arg: string) => void;
         openItem: (arg: string) => void;
     }
@@ -57,7 +59,8 @@ let sidebarApp = new Vue({
         searchQuery: "",
         currentFilter: "Filter",
         currentFilterValue: "Value",
-        currentFilters: {}
+        currentFilters: {},
+        user: null
     },
     computed: {
         searchResults: function (): string[] {
@@ -167,6 +170,18 @@ Vue.component('mapItem', {
         </div>
     `
 });
+
+firebase.auth().onAuthStateChanged(function (user) {
+    sidebarApp.user = user;
+});
+
+window.signOut = (): void => {
+    firebase.auth().signOut().then(function () {
+        sidebarApp.user = null
+    }).catch(function (error) {
+        console.error(error);
+    });
+};
 
 interface Asteroid {
     object: THREE.Object3D;
