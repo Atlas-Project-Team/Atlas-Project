@@ -172,14 +172,26 @@ Vue.component('mapItem', {
 
 firebase.auth().onAuthStateChanged(function (user) {
     sidebarApp.user = user;
+    if (!initialised) {
+        init()
+            .then(() => {
+                animate();
+            })
+            .catch(err => {
+                console.error(err);
+            });
+    }
 });
 
 window.signOut = (): void => {
-    firebase.auth().signOut().then(function () {
-        sidebarApp.user = null
-    }).catch(function (error) {
-        console.error(error);
-    });
+    firebase.auth().signOut()
+        .then(function () {
+            sidebarApp.user = null;
+            window.location.reload();
+        })
+        .catch(function (error) {
+            console.error(error);
+        });
 };
 
 interface Asteroid {
@@ -225,16 +237,9 @@ let cameraZoomDistance: number;
 let grid: THREE.Object3D;
 let sceneLights: { sun: THREE.Object3D | null; stars: THREE.Object3D | null } = {sun: null, stars: null};
 let movement: { x: number[]; y: number[]; z: number[]; zoom: number[] } = {x: [], y: [], z: [], zoom: []};
+let initialised = false;
 
 const GCPAssets: string = "http://storage.googleapis.com/project-atlas-assets/HR_Assets/";
-
-init().then(() => {
-    animate();
-})
-    .catch(err => {
-        console.error(err);
-    });
-
 
 function lookAt(objectId: string) {
     let object = mapData.find((item) => {
@@ -274,9 +279,11 @@ function easeBetween(start: THREE.Vector3, finish: THREE.Vector3, startZoom: num
 }
 
 async function init() {
+    initialised = true;
+
     mapData = [];
 
-    await db.collection("mapData").get().then((querySnapshot) => {
+    await db.collection("mapData").where("owner", "in", ['', (sidebarApp.user ? sidebarApp.user.uid : '')]).get().then((querySnapshot) => {
         querySnapshot.forEach((doc) => {
             let data = <mapItem>doc.data();
             data.objectId = doc.id;
