@@ -2,6 +2,7 @@ import * as THREE from "three";
 import 'three/examples/jsm/controls/OrbitControls.js';
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
+import {DRACOLoader} from 'three/examples/jsm/loaders/DracoLoader';
 import Vue from 'vue';
 import Fuse from 'fuse.js';
 import * as firebase from 'firebase/app';
@@ -9,7 +10,7 @@ import 'firebase/analytics';
 import 'firebase/firestore';
 import 'firebase/auth';
 
-type mapItem = { objectId: string; pos: { x: number; y: number; z: number }; modelPath: string; objectInfo: { [key: string]: any }; scale: number; name: string, defaultZoom: number, children: object[] };
+type mapItem = { objectId: string; pos: { x: number; y: number; z: number }; rot: { x: number; y: number; z: number }; modelPath: string; objectInfo: { [key: string]: any }; scale: number; name: string, defaultZoom: number, children: object[] };
 
 declare global {
     // noinspection JSUnusedGlobalSymbols
@@ -383,14 +384,18 @@ async function init() {
     spawnedAsteroids = 0;
 
     for (let mapObject in mapData) {
-        // noinspection JSUnfilteredForInLoop ,JSUnusedLocalSymbols
-        let {name, scale, objectId, pos, modelPath, objectInfo} = mapData[mapObject];
+        let {scale, pos, rot, modelPath} = mapData[mapObject];
 
         let loader = new GLTFLoader();
+
+        let dracoLoader = new DRACOLoader();
+        dracoLoader.setDecoderPath('./draco/');
+        loader.setDRACOLoader(dracoLoader);
 
         loader.load(GCPAssets + modelPath + 'model.glb', (gltf) => {
             gltf.scene.scale.set(scale, scale, scale);
             gltf.scene.position.set(pos.x, pos.y, pos.z);
+            gltf.scene.rotation.set(rot.x, rot.y, rot.z);
             scene.add(gltf.scene);
         }, undefined, (err) => {
             console.error(err)
