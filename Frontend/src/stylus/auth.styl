@@ -1,6 +1,9 @@
 #container {
-  background: rgb(29, 29, 101);
-  background: linear-gradient(90deg, rgba(29, 29, 101, 1) 0%, rgba(127, 37, 112, 1) 72%, rgba(197, 64, 105, 1) 100%);
+  //background: rgb(29, 29, 101);
+  //background: linear-gradient(90deg, rgba(29, 29, 101, 1) 0%, rgba(127, 37, 112, 1) 72%, rgba(197, 64, 105, 1) 100%);
+  background-image: url("./img/Starbase_Press_Image.jpg");
+  background-position: center center;
+  background-size: cover;
   height: 100vh;
   width: 100%;
   margin: 0 0 0 0;
@@ -9,10 +12,10 @@
 }
 
 #login-box {
-  background-color: #484554;
+  background-color: rgba(72, 69, 84, 0.9);
   display: flex;
   justify-content: center;
-  width: 25vw;
+  width: 35vw;
   height: 60vh;
   margin: 20vh auto;
   padding: 50px;
@@ -20,6 +23,7 @@
 
 #form {
   align-self: center;
+  width: 25vw;
 }
 
 .color-heading {
@@ -48,7 +52,7 @@ input:focus {
 }
 
 .inputContainer:focus-within {
-  border-bottom: 2px solid #917FFB;
+  border-bottom: 1px solid #917FFB;
 }
 
 #emailInput > .inputIcon {
@@ -56,11 +60,24 @@ input:focus {
   mask-image: url('svg/envelope.svg');
 }
 
-#passwordInput > .inputIcon {
+#passwordContainer > .inputIcon {
   -webkit-mask-image: url('svg/lock.svg');
   mask-image: url('svg/lock.svg');
 }
 
 ::placeholder {
+  color: lightgrey;
+}
+
+#copyright {
+  position: absolute;
+  bottom: 0;
+  text-align: center;
+  margin-left: auto;
+  margin-right: auto;
+  left: 0;
+  right: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  font-size: 10pt;
   color: lightgrey;
 }
