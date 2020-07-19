@@ -12,18 +12,29 @@
 }
 
 #login-box {
+  //width: 35vw;
+  //height: 60vh;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   background-color: rgba(72, 69, 84, 0.9);
-  display: flex;
-  justify-content: center;
-  width: 35vw;
-  height: 60vh;
-  margin: 20vh auto;
-  padding: 50px;
+  text-align: center;
+  padding: 20px;
+}
+
+#login-box > * {
+  background: none;
+  padding: 30px;
 }
 
 #form {
   align-self: center;
   width: 25vw;
+}
+
+.mdl-card {
+  background: white !important;
 }
 
 .color-heading {

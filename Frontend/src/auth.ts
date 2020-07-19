@@ -1,6 +1,7 @@
 import * as firebase from 'firebase/app';
 import 'firebase/analytics';
 import 'firebase/auth';
+import * as firebaseui from 'firebaseui';
 
 // noinspection SpellCheckingInspection
 const firebaseConfig = {
@@ -16,57 +17,18 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 firebase.analytics();
+let ui = new firebaseui.auth.AuthUI(firebase.auth());
 
-document.getElementById('signInButton').addEventListener('click', () => {
-    let email = (<HTMLInputElement>document.getElementById('emailInputField')).value;
-    let password = (<HTMLInputElement>document.getElementById('passwordInputField')).value;
-    firebase.auth().signInWithEmailAndPassword(email, password)
-        .catch(function (error: any) {
-            // Handle Errors here.
-            if (error.code === 'auth/invalid-email') {
-                document.getElementById('errorText').innerText = "Email is invalid.";
-            } else if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
-                document.getElementById('errorText').innerText = "Email or password is incorrect.";
-            } else {
-                document.getElementById('errorText').innerText = "An error occurred.";
-            }
-        })
-        .then(res => {
-            if (res !== undefined) {
-                document.getElementById('errorText').innerText = "";
-            }
-        })
-});
-
-document.getElementById('signUpButton').addEventListener('click', () => {
-    let email = (<HTMLInputElement>document.getElementById('emailInputField')).value;
-    let password = (<HTMLInputElement>document.getElementById('passwordInputField')).value;
-    firebase.auth().createUserWithEmailAndPassword(email, password)
-        .catch(function (error) {
-            // Handle Errors here.
-            console.dir(error);
-            if (error.code === 'auth/invalid-email') {
-                document.getElementById('errorText').innerText = "Email is invalid.";
-            } else if (error.code === 'auth/weak-password') {
-                document.getElementById('errorText').innerText = error.message;
-            } else if (error.code === 'auth/email-already-in-use') {
-                document.getElementById('errorText').innerText = error.message;
-            } else {
-                document.getElementById('errorText').innerText = "An error occurred.";
-            }
-        })
-        .then(res => {
-            if (res !== undefined) {
-                document.getElementById('errorText').innerText = "";
-            }
-        })
-});
-
-firebase.auth().onAuthStateChanged(function (user) {
-    if (user) {
-        // User is signed in.
-        window.location.href = './index.html';
-    } else {
-        console.log("Signed out");
-    }
+ui.start('#login-box', {
+    signInSuccessUrl: './index.html',
+    signInOptions: [
+        {
+            provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
+            requireDisplayName: false,
+        },
+        {
+            provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID
+        }
+    ],
+    credentialHelper: firebaseui.auth.CredentialHelper.GOOGLE_YOLO
 });
