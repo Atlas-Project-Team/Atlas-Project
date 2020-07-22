@@ -5,3 +5,4 @@ atlas/atlas/__pycache__/urls.cpython-37.pyc
 atlas/atlas/__pycache__/wsgi.cpython-37.pyc
 /Frontend/node_modules/
 /Frontend/package-lock.json
+/firebase-debug.log
