@@ -68,7 +68,6 @@ input:focus {
   font-size: 10pt;
   color: #d3d3d3;
 }
-
 #discordButton {
   background-color: #7289da;
   margin: auto;
@@ -81,7 +80,6 @@ input:focus {
   cursor: pointer;
   padding-top: 20px;
 }
-
 #discordButton > * {
   display: inline-block;
 }

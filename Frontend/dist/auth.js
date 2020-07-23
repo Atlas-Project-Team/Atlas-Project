@@ -252,7 +252,7 @@ eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export (binding) *
           !*** ./src/auth.ts ***!
           \*********************/
         /*! no exports provided */
-/***/ (function(module, __webpack_exports__, __webpack_require__) {
+        /***/ (function (module, __webpack_exports__, __webpack_require__) {
 
             "use strict";
             eval("__webpack_require__.r(__webpack_exports__);\n/* harmony import */ var firebase_app__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! firebase/app */ \"../node_modules/firebase/app/dist/index.cjs.js\");\n/* harmony import */ var firebase_app__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__webpack_require__.n(firebase_app__WEBPACK_IMPORTED_MODULE_0__);\n/* harmony import */ var firebase_analytics__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! firebase/analytics */ \"../node_modules/firebase/analytics/dist/index.esm.js\");\n/* harmony import */ var firebase_auth__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! firebase/auth */ \"../node_modules/firebase/auth/dist/index.esm.js\");\n\r\n\r\n\r\n// noinspection SpellCheckingInspection\r\nconst firebaseConfig = {\r\n    apiKey: \"AIzaSyButkqFXtrI90FUM-l7O-nWz-3TxIwd_0U\",\r\n    authDomain: \"atlas-project-274801.firebaseapp.com\",\r\n    databaseURL: \"https://atlas-project-274801.firebaseio.com\",\r\n    projectId: \"atlas-project-274801\",\r\n    storageBucket: \"atlas-project-274801.appspot.com\",\r\n    messagingSenderId: \"807372296549\",\r\n    appId: \"1:807372296549:web:b1e8fc3be8c2a27488918c\",\r\n    measurementId: \"G-40XQC6G6E4\"\r\n};\r\nfirebase_app__WEBPACK_IMPORTED_MODULE_0__[\"initializeApp\"](firebaseConfig);\r\nfirebase_app__WEBPACK_IMPORTED_MODULE_0__[\"analytics\"]();\r\nfirebase_app__WEBPACK_IMPORTED_MODULE_0__[\"auth\"]().onAuthStateChanged(function (user) {\r\n    if (user) {\r\n        window.location.href = \"./index.html\";\r\n    }\r\n});\r\ndocument.getElementById(\"discordButton\").addEventListener(\"click\", () => {\r\n    window.open('/auth/popup.html', 'name', 'height=585,width=400');\r\n});\r\n\n\n//# sourceURL=webpack:///./src/auth.ts?");
@@ -260,4 +260,5 @@ eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export (binding) *
             /***/
         })
 
-/******/ });
+        /******/
+    });
