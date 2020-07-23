@@ -70,8 +70,6 @@ Please wait...
     } else if (!code) {
         // Start the auth flow.
         window.location.href = 'https://us-central1-' + getFirebaseProjectId() + '.cloudfunctions.net/redirect';
-        //window.location.href= 'https://4b1c08bb6aed.ngrok.io/atlas-project-274801/us-central1/redirect';
-        //window.location.href = 'https://sbatlasproject.com/auth/redirect';
     } else {
         // Use JSONP to load the 'token' Firebase Function to exchange the auth code against a Firebase custom token.
         const script = document.createElement('script');
@@ -79,8 +77,6 @@ Please wait...
         // This is the URL to the HTTP triggered 'token' Firebase Function.
         // See https://firebase.google.com/docs/functions.
         let tokenFunctionURL = 'https://us-central1-' + getFirebaseProjectId() + '.cloudfunctions.net/token';
-        //let tokenFunctionURL = 'https://4b1c08bb6aed.ngrok.io/atlas-project-274801/us-central1/token';
-        //let tokenFunctionURL = 'https://sbatlasproject.com/auth/token';
         script.src = tokenFunctionURL +
             '?code=' + encodeURIComponent(code) +
             '&state=' + encodeURIComponent(state) +

@@ -39,7 +39,10 @@ exports.redirect = functions.https.onRequest(async (req, res) => {
         const state = req.cookies.state || crypto.randomBytes(20).toString('hex');
         console.log('Setting verification state:', state);
         res.cookie('state', state.toString(), {
-            maxAge: 3600000
+            maxAge: 3600000,
+            secure: true,
+            httpOnly: true,
+            sameSite: "none"
         });
         const redirectUri = client.authorizeURL({
             redirect_uri: oAuthConfig.redirectUri,
