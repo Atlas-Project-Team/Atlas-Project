@@ -32,17 +32,14 @@ exports.redirect = functions.https.onRequest(async (req, res) => {
             revokePath: '/api/oauth2/token/revoke'
         },
     };
-    const {ClientCredentials, ResourceOwnerPassword, AuthorizationCode} = require('simple-oauth2');
+    const {AuthorizationCode} = require('simple-oauth2');
     const client = new AuthorizationCode(config);
 
     cookieParser()(req, res, () => {
         const state = req.cookies.state || crypto.randomBytes(20).toString('hex');
         console.log('Setting verification state:', state);
         res.cookie('state', state.toString(), {
-            maxAge: 3600000,
-            secure: true,
-            httpOnly: true,
-            sameSite: "None"
+            maxAge: 3600000
         });
         const redirectUri = client.authorizeURL({
             redirect_uri: oAuthConfig.redirectUri,
@@ -124,7 +121,6 @@ exports.token = functions.https.onRequest(async (req, res) => {
 /**
  * Creates a Firebase account with the given user profile and returns a custom auth token allowing
  * signing-in this account.
- * Also saves the accessToken to the datastore at /discordAccessToken/$uid
  *
  * @returns {Promise<string>} The Firebase custom auth token in a promise.
  */

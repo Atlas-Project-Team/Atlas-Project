@@ -1,7 +1,6 @@
 import * as firebase from 'firebase/app';
 import 'firebase/analytics';
 import 'firebase/auth';
-import * as firebaseui from 'firebaseui';
 
 // noinspection SpellCheckingInspection
 const firebaseConfig = {
@@ -17,18 +16,13 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig);
 firebase.analytics();
-let ui = new firebaseui.auth.AuthUI(firebase.auth());
 
-ui.start('#login-box', {
-    signInSuccessUrl: './index.html',
-    signInOptions: [
-        {
-            provider: firebase.auth.EmailAuthProvider.PROVIDER_ID,
-            requireDisplayName: false,
-        },
-        {
-            provider: firebase.auth.GoogleAuthProvider.PROVIDER_ID
-        }
-    ],
-    credentialHelper: firebaseui.auth.CredentialHelper.GOOGLE_YOLO
+firebase.auth().onAuthStateChanged(function (user) {
+    if (user) {
+        window.location.href = "./index.html";
+    }
+});
+
+document.getElementById("discordButton").addEventListener("click", () => {
+    window.open('/auth/popup.html', 'name', 'height=585,width=400');
 });

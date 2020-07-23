@@ -239,7 +239,7 @@ let sceneLights: { sun: THREE.Object3D | null; stars: THREE.Object3D | null } = 
 let movement: { x: number[]; y: number[]; z: number[]; zoom: number[] } = {x: [], y: [], z: [], zoom: []};
 let initialised = false;
 
-const GCPAssets: string = "http://storage.googleapis.com/project-atlas-assets/HR_Assets/";
+const GCPAssets: string = "https://storage.googleapis.com/project-atlas-assets/HR_Assets/";
 
 function lookAt(objectId: string) {
     let object = mapData.find((item) => {

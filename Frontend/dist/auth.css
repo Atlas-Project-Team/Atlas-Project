@@ -9,21 +9,15 @@
   overflow: hidden;
 }
 #login-box {
+  width: 30vw;
   position: fixed;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  background-color: rgba(72,69,84,0.9);
+  background-color: rgba(72, 69, 84, 0.9);
   text-align: center;
   padding: 20px;
-}
-#login-box > * {
-  background: none;
-  padding: 30px;
-}
-#form {
-  align-self: center;
-  width: 25vw;
+  border-radius: 5px;
 }
 .mdl-card {
   background: #fff !important;
@@ -70,7 +64,24 @@ input:focus {
   margin-right: auto;
   left: 0;
   right: 0;
-  background-color: rgba(0,0,0,0.7);
+  background-color: rgba(0, 0, 0, 0.7);
   font-size: 10pt;
   color: #d3d3d3;
+}
+
+#discordButton {
+  background-color: #7289da;
+  margin: auto;
+  margin-top: 50px;
+  width: 20vw;
+  color: #fff;
+  padding: 10px;
+  border-radius: 5px;
+  white-space: nowrap;
+  cursor: pointer;
+  padding-top: 20px;
+}
+
+#discordButton > * {
+  display: inline-block;
 }
