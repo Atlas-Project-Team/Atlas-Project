@@ -239,6 +239,7 @@ let grid: THREE.Object3D;
 let sceneLights: { sun: THREE.Object3D | null; stars: THREE.Object3D | null } = {sun: null, stars: null};
 let movement: { x: number[]; y: number[]; z: number[]; zoom: number[] } = {x: [], y: [], z: [], zoom: []};
 let initialised = false;
+let scale: HTMLElement = document.getElementById("scale");
 
 const GCPAssets: string = "https://storage.googleapis.com/project-atlas-assets/HR_Assets/";
 
@@ -514,7 +515,7 @@ function animate() {
     }
 
     // Output a scale in text to a h1 element on top of the canvas
-    document.getElementById("scale").innerText = "1 Grid Tile = " + Math.pow(settings.zoomIncrement, zoomFactor).toString() + "km × " + Math.pow(settings.zoomIncrement, zoomFactor).toString() + "km.";
+    scale.innerText = "1 Grid Tile = " + Math.pow(settings.zoomIncrement, zoomFactor).toString() + "km × " + Math.pow(settings.zoomIncrement, zoomFactor).toString() + "km.";
 
     // Scale the grid to match the zoom factor, that is to say, scale it by zoom Increment raised to the power of zoom Factor
     grid.scale.set(Math.pow(settings.zoomIncrement, zoomFactor), Math.pow(settings.zoomIncrement, zoomFactor), Math.pow(settings.zoomIncrement, zoomFactor));
