@@ -40,7 +40,7 @@ jobs:
         working-directory: functions
         env:
           SSH_KEY: ${{secrets.TEST_JSON}}
-      - run: cat test.json
+      - run: echo "$(cat test.json)"
         working-directory: functions
       - name: GitHub Action for Firebase
         uses: w9jds/firebase-action@v1.5.0
