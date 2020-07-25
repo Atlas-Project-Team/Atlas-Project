@@ -25,6 +25,16 @@ jobs:
       - name: Install Function Dependencies
         run: npm install
         working-directory: functions
+      - run: 'echo "$CREDENTIALS_JSON" > service-account.json'
+        shell: bash
+        working-directory: functions
+        env:
+          SSH_KEY: ${{secrets.CREDENTIALS_JSON}}
+      - run: 'echo "$OAUTH_CONFIG" > info.js'
+        shell: bash
+        working-directory: functions
+        env:
+          SSH_KEY: ${{secrets.OAUTH_CONFIG}}
       - name: GitHub Action for Firebase
         uses: w9jds/firebase-action@v1.5.0
         with:
