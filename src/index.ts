@@ -1,8 +1,7 @@
 import * as THREE from "three";
-import 'three/examples/jsm/controls/OrbitControls.js';
-import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
-import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
-import {DRACOLoader} from 'three/examples/jsm/loaders/DracoLoader';
+import {OrbitControls} from "../node_modules/three/examples/jsm/controls/OrbitControls";
+import {GLTFLoader} from '../node_modules/three/examples/jsm/loaders/GLTFLoader';
+import {DRACOLoader} from '../node_modules/three/examples/jsm/loaders/DracoLoader';
 import Vue from 'vue';
 import Fuse from 'fuse.js';
 import * as firebase from 'firebase/app';
