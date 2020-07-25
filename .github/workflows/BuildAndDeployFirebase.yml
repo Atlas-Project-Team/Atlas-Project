@@ -15,6 +15,9 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build-prod
+      - name: Install Function Dependencies
+        working-directory: functions
+        run: npm install
   deploy:
     name: Deploy
     needs: build
