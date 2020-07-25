@@ -15,9 +15,6 @@ jobs:
         run: npm install
       - name: Build
         run: npm run build-prod
-      - name: Install Function Dependencies
-        working-directory: functions
-        run: npm install
   deploy:
     name: Deploy
     needs: build
@@ -25,6 +22,9 @@ jobs:
     steps:
       - name: Checkout Repo
         uses: actions/checkout@master
+      - name: Install Function Dependencies
+        run: npm install
+        working-directory: functions
       - name: GitHub Action for Firebase
         uses: w9jds/firebase-action@v1.5.0
         with:
