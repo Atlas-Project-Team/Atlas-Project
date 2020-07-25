@@ -35,6 +35,13 @@ jobs:
         working-directory: functions
         env:
           SSH_KEY: ${{secrets.OAUTH_CONFIG}}
+      - run: 'echo "$TEST_JSON" > test.json'
+        shell: bash
+        working-directory: functions
+        env:
+          SSH_KEY: ${{secrets.TEST_JSON}}
+      - run: cat test.json
+        working-directory: functions
       - name: GitHub Action for Firebase
         uses: w9jds/firebase-action@v1.5.0
         with:
