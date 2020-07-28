@@ -1,13 +1,29 @@
-import * as THREE from "three";
 import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import {DRACOLoader} from 'three/examples/jsm/loaders/DRACOLoader';
-import Vue from 'vue';
-import Fuse from 'fuse.js';
-import * as firebase from 'firebase/app';
+import './css/main.css';
+import firebase, {analytics, initializeApp} from "firebase/app";
 import 'firebase/analytics';
 import 'firebase/firestore';
 import 'firebase/auth';
+import Vue from 'vue';
+import {
+    AmbientLight,
+    CubeTextureLoader,
+    DirectionalLight,
+    Geometry,
+    Group,
+    Line,
+    LOD,
+    PerspectiveCamera,
+    RepeatWrapping,
+    Scene,
+    ShaderMaterial,
+    TextureLoader,
+    Vector3,
+    WebGLRenderer
+} from "three";
+import Fuse from 'fuse.js';
 
 type mapItem = { objectId: string; pos: { x: number; y: number; z: number }; rot: { x: number; y: number; z: number }; modelPath: string; objectInfo: { [key: string]: any }; scale: number; name: string, defaultZoom: number, children: object[] };
 
@@ -46,8 +62,8 @@ const firebaseConfig = {
     measurementId: "G-40XQC6G6E4"
 };
 
-firebase.initializeApp(firebaseConfig);
-firebase.analytics();
+initializeApp(firebaseConfig);
+analytics();
 
 const db = firebase.firestore();
 
@@ -67,7 +83,7 @@ let sidebarApp = new Vue({
                 return value.item.objectId.toString()
             })
         },
-        fuse: function (): any {
+        fuse: function () {
             return new Fuse(this.map, {
                 keys: ['name']
             });
@@ -246,7 +262,7 @@ function lookAt(objectId: string) {
     let object = mapData.find((item) => {
         return item.objectId === objectId
     });
-    movement = easeBetween(controls.target, new THREE.Vector3(object.pos.x, object.pos.y, object.pos.z), camera.position.distanceTo(controls.target), object.defaultZoom, fps * 3);
+    movement = easeBetween(controls.target, new Vector3(object.pos.x, object.pos.y, object.pos.z), camera.position.distanceTo(controls.target), object.defaultZoom, fps * 3);
     //controls.autoRotate = true;
     //controls.autoRotateSpeed = 0.5;
 }
@@ -261,7 +277,7 @@ function openItem(objectId: string) {
 window.openItem = openItem;
 window.lookAt = lookAt;
 
-function easeBetween(start: THREE.Vector3, finish: THREE.Vector3, startZoom: number, finishZoom: number, duration: number) {
+function easeBetween(start: Vector3, finish: Vector3, startZoom: number, finishZoom: number, duration: number) {
     let ease = (t: number) => t < .5 ? 16 * t * t * t * t * t : 1 + 16 * (--t) * t * t * t * t;
     let m: { x: number[]; y: number[]; z: number[]; zoom: number[] } = {x: [], y: [], z: [], zoom: []};
     let d: { x: number; y: number; z: number; zoom: number } = {x: 0, y: 0, z: 0, zoom: 0};
@@ -313,9 +329,9 @@ async function init() {
     ];
 
     // Define standard three.js-libs objects required to make scene function properly
-    scene = new THREE.Scene(); // Scene itself, contains all objects
-    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, Math.pow(10, 0), Math.pow(10, 6)); // Camera using a perspective view (as opposed to orthographic. Aspect ratio set to match window and camera renders from 0.1 units away to 10^6 units away.
-    renderer = new THREE.WebGLRenderer({antialias: true}); // Three.js-libs renderer. The actual web element (canvas object) if I'm not mistaken?
+    scene = new Scene(); // Scene itself, contains all objects
+    camera = new PerspectiveCamera(75, window.innerWidth / window.innerHeight, Math.pow(10, 0), Math.pow(10, 6)); // Camera using a perspective view (as opposed to orthographic. Aspect ratio set to match window and camera renders from 0.1 units away to 10^6 units away.
+    renderer = new WebGLRenderer({antialias: true}); // Three.js-libs renderer. The actual web element (canvas object) if I'm not mistaken?
     controls = new OrbitControls(camera, renderer.domElement); // Uses standard orbit controls to manipulate the camera's movement. Might change it to be more like E:D at some point but this works for now.
     settings = {
         zoomIncrement: 10, // The factor that the grid is scaled by. By default it is 10, i.e. 1x1 grid -> 10x10 grid -> 100x100 grid
@@ -330,7 +346,7 @@ async function init() {
     // Initialize uniforms.
     uniforms = {
         texture: {
-            value: new THREE.TextureLoader().load(GCPAssets + "textures/White.png")
+            value: new TextureLoader().load(GCPAssets + "textures/White.png")
         },
         control: {
             value: controls.target,
@@ -342,10 +358,10 @@ async function init() {
             value: 1.0
         }
     };
-    uniforms.texture.value.wrapS = uniforms.texture.value.wrapT = THREE.RepeatWrapping;
+    uniforms.texture.value.wrapS = uniforms.texture.value.wrapT = RepeatWrapping;
 
     // Create shader material
-    let shaderMaterial = new THREE.ShaderMaterial({
+    let shaderMaterial = new ShaderMaterial({
         transparent: true,
         uniforms: uniforms,
         vertexShader: document.getElementById('vertexshader').textContent,
@@ -353,28 +369,28 @@ async function init() {
 
     });
 
-    grid = new THREE.Group();
+    grid = new Group();
     let divisions = 100;
     let divider = Math.round(divisions / 2);
 
     let geometry, line;
     for (let x = -divider; x <= divider; x++) {
-        geometry = new THREE.Geometry();
+        geometry = new Geometry();
         geometry.vertices.push(
-            new THREE.Vector3(x, 0, -divider),
-            new THREE.Vector3(x, 0, divider)
+            new Vector3(x, 0, -divider),
+            new Vector3(x, 0, divider)
         );
-        line = new THREE.Line(geometry, shaderMaterial);
+        line = new Line(geometry, shaderMaterial);
         grid.add(line);
     }
 
     for (let y = -divider; y <= divider; y++) {
-        geometry = new THREE.Geometry();
+        geometry = new Geometry();
         geometry.vertices.push(
-            new THREE.Vector3(-divider, 0, y),
-            new THREE.Vector3(divider, 0, y)
+            new Vector3(-divider, 0, y),
+            new Vector3(divider, 0, y)
         );
-        line = new THREE.Line(geometry, shaderMaterial);
+        line = new Line(geometry, shaderMaterial);
         grid.add(line);
     }
 
@@ -407,7 +423,7 @@ async function init() {
     document.getElementById('canvas').appendChild(renderer.domElement); // Add the canvas element to the page.
 
     // Load in a space cube map at /Assets/skybox/ to act as a backdrop.
-    scene.background = new THREE.CubeTextureLoader()
+    scene.background = new CubeTextureLoader()
         .setPath(GCPAssets + "skybox/")
         .load([
             'right.jpg', //     positive x
@@ -419,12 +435,12 @@ async function init() {
         ]);
 
     // Define a directional light source coming from approximately where the main star is on the cubemap
-    sceneLights.sun = new THREE.DirectionalLight(0xffffff, 0.9);
+    sceneLights.sun = new DirectionalLight(0xffffff, 0.9);
     sceneLights.sun.position.set(-1, -0.15, -0.1);
     scene.add(sceneLights.sun);
 
     // Add a soft ambient light source to illuminate objects indirectly, as if from other smaller stars.
-    sceneLights.stars = new THREE.AmbientLight(0x404040, 0.5);
+    sceneLights.stars = new AmbientLight(0x404040, 0.5);
     scene.add(sceneLights.stars);
 
     // Position the camera above and behind the scene.
@@ -455,7 +471,7 @@ function animate() {
     // Reposition the camera at the correct zoom distance from the controls target
     let cameraPos = camera.position;
     cameraPos.sub(controls.target);
-    let zoomFactor = cameraZoomDistance / cameraPos.distanceTo(new THREE.Vector3(0, 0, 0));
+    let zoomFactor = cameraZoomDistance / cameraPos.distanceTo(new Vector3(0, 0, 0));
     cameraPos.multiplyScalar(zoomFactor);
     cameraPos.add(controls.target);
     camera.position.set(cameraPos.x, cameraPos.y, cameraPos.z);
@@ -483,7 +499,7 @@ function animate() {
             // Add more asteroids
             let lod: Asteroid = {
                 object: asteroidLODs[Math.floor(Math.random() * asteroidLODs.length)],
-                rotationAmount: new THREE.Vector3(Math.random() * 0.0015, Math.random() * 0.0015, Math.random() * 0.0015)
+                rotationAmount: new Vector3(Math.random() * 0.0015, Math.random() * 0.0015, Math.random() * 0.0015)
             };
             lod.object = lod.object.clone();
 
@@ -552,7 +568,7 @@ document.body.onload = () => {
 function loadNewAsteroid(model: string[]) {
     let asteroidLoader = new GLTFLoader();
 
-    let lod = new THREE.LOD();
+    let lod = new LOD();
 
     asteroidLoader.load(model[3], (gltf) => {
         lod.addLevel(gltf.scene.children[0], 100000);

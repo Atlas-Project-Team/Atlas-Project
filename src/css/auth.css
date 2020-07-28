@@ -1,7 +1,7 @@
 #container {
-  //background: rgb(29, 29, 101);
-  //background: linear-gradient(90deg, rgba(29, 29, 101, 1) 0%, rgba(127, 37, 112, 1) 72%, rgba(197, 64, 105, 1) 100%);
-  background-image: url("./img/Starbase_Press_Image.jpg");
+/ / background: rgb(29, 29, 101);
+/ / background: linear-gradient(90 deg, rgba(29, 29, 101, 1) 0 %, rgba(127, 37, 112, 1) 72 %, rgba(197, 64, 105, 1) 100 %);
+  background-image: url("../img/Starbase_Press_Image.jpg");
   background-position: center center;
   background-size: cover;
   height: 100vh;
@@ -58,13 +58,13 @@ input:focus {
 }
 
 #emailInput > .inputIcon {
-  -webkit-mask-image: url('svg/envelope.svg');
-  mask-image: url('svg/envelope.svg');
+  -webkit-mask-image: url('../svg/envelope.svg');
+  mask-image: url('../svg/envelope.svg');
 }
 
 #passwordContainer > .inputIcon {
-  -webkit-mask-image: url('svg/lock.svg');
-  mask-image: url('svg/lock.svg');
+  -webkit-mask-image: url('../svg/lock.svg');
+  mask-image: url('../svg/lock.svg');
 }
 
 ::placeholder {
