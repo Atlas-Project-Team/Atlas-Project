@@ -1,6 +1,14 @@
 import * as firebase from 'firebase/app';
 import 'firebase/analytics';
 import 'firebase/auth';
+import './css/auth.css';
+// @ts-ignore
+import DiscordIcon from './img/Discord_Icon.png';
+// @ts-ignore
+import DiscordLogo from './img/Discord_Logo_Word.png';
+
+(<HTMLImageElement>document.getElementById('discordIconImg')).src = DiscordIcon;
+(<HTMLImageElement>document.getElementById('discordLogoImg')).src = DiscordLogo;
 
 // noinspection SpellCheckingInspection
 const firebaseConfig = {
