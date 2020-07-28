@@ -1,3 +1,4 @@
+const webpack = require('webpack');
 const path = require('path');
 const MinifyPlugin = require("babel-minify-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
@@ -10,9 +11,6 @@ module.exports = {
         main: './src/index.ts',
         auth: './src/auth.ts'
 
-    },
-    node: {
-        fs: 'empty'
     },
     module: {
         rules: [
@@ -59,6 +57,7 @@ module.exports = {
         chunkFilename: '[name].bundle.js',
     },
     plugins: [
+        new webpack.LoaderOptionsPlugin({debug: true}),
         new CleanWebpackPlugin(),
         new MinifyPlugin({}, {}),
         new HtmlWebpackPlugin({

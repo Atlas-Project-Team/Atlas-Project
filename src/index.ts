@@ -2,7 +2,7 @@ import {OrbitControls} from "three/examples/jsm/controls/OrbitControls";
 import {GLTFLoader} from 'three/examples/jsm/loaders/GLTFLoader';
 import {DRACOLoader} from 'three/examples/jsm/loaders/DRACOLoader';
 import './css/main.css';
-import firebase, {analytics, initializeApp} from "firebase/app";
+import firebase from "firebase/app";
 import 'firebase/analytics';
 import 'firebase/firestore';
 import 'firebase/auth';
@@ -15,10 +15,13 @@ import {
     Group,
     Line,
     LOD,
+    Object3D,
     PerspectiveCamera,
+    Renderer,
     RepeatWrapping,
     Scene,
     ShaderMaterial,
+    Texture,
     TextureLoader,
     Vector3,
     WebGLRenderer
@@ -35,12 +38,14 @@ declare global {
         openItem: (arg: string) => void;
     }
 
+    // noinspection JSUnusedGlobalSymbols
     interface JQuery {
         collapse: (arg: string) => void;
     }
 }
 
 declare module 'vue/types/vue' {
+    // noinspection JSUnusedGlobalSymbols
     interface Vue {
         map: mapItem[],
         searchQuery: string,
@@ -62,8 +67,8 @@ const firebaseConfig = {
     measurementId: "G-40XQC6G6E4"
 };
 
-initializeApp(firebaseConfig);
-analytics();
+firebase.initializeApp(firebaseConfig);
+firebase.analytics();
 
 const db = firebase.firestore();
 
@@ -211,8 +216,8 @@ window.signOut = (): void => {
 };
 
 interface Asteroid {
-    object: THREE.Object3D;
-    rotationAmount: THREE.Vector3;
+    object: Object3D;
+    rotationAmount: Vector3;
 }
 
 let times: number[] = [];
@@ -235,23 +240,23 @@ refreshLoop();
 
 let mapData: mapItem[];
 let asteroidsToLoad: number;
-let asteroidA: THREE.Object3D;
-let asteroidB: THREE.Object3D;
-let asteroidC: THREE.Object3D;
-let asteroidLODs: THREE.Object3D[];
-let scene: THREE.Scene;
-let camera: THREE.PerspectiveCamera;
-let renderer: THREE.Renderer;
+let asteroidA: Object3D;
+let asteroidB: Object3D;
+let asteroidC: Object3D;
+let asteroidLODs: Object3D[];
+let scene: Scene;
+let camera: PerspectiveCamera;
+let renderer: Renderer;
 let controls: OrbitControls;
 let settings: { zoomIncrement: number; asteroidCount: number };
-let uniforms: { texture: { value: THREE.Texture }; zoomDistance: { value: number }; scale: { value: number }; control: { value: THREE.Vector3 }; };
+let uniforms: { texture: { value: Texture }; zoomDistance: { value: number }; scale: { value: number }; control: { value: Vector3 }; };
 let asteroids: Asteroid[];
 let spawnedAsteroids: number;
-let cameraFocus: THREE.Vector3;
-let cameraPosition: THREE.Vector3;
+let cameraFocus: Vector3;
+let cameraPosition: Vector3;
 let cameraZoomDistance: number;
-let grid: THREE.Object3D;
-let sceneLights: { sun: THREE.Object3D | null; stars: THREE.Object3D | null } = {sun: null, stars: null};
+let grid: Object3D;
+let sceneLights: { sun: Object3D | null; stars: Object3D | null } = {sun: null, stars: null};
 let movement: { x: number[]; y: number[]; z: number[]; zoom: number[] } = {x: [], y: [], z: [], zoom: []};
 let initialised = false;
 let scale: HTMLElement = document.getElementById("scale");
