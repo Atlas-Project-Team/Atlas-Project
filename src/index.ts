@@ -28,6 +28,7 @@ import {
 } from "three";
 import Fuse from 'fuse.js';
 
+
 type mapItem = { objectId: string; pos: { x: number; y: number; z: number }; rot: { x: number; y: number; z: number }; modelPath: string; objectInfo: { [key: string]: any }; scale: number; name: string, defaultZoom: number, children: object[] };
 
 declare global {
@@ -88,7 +89,7 @@ let sidebarApp = new Vue({
                 return value.item.objectId.toString()
             })
         },
-        fuse: function () {
+        fuse: function (): any {
             return new Fuse(this.map, {
                 keys: ['name']
             });

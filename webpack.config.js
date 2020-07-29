@@ -1,5 +1,5 @@
+const webpack = require('webpack');
 const path = require('path');
-const MinifyPlugin = require("babel-minify-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require('copy-webpack-plugin');
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
@@ -11,9 +11,6 @@ module.exports = {
         auth: './src/auth.ts'
 
     },
-    node: {
-        fs: 'empty'
-    },
     module: {
         rules: [
             {
@@ -21,15 +18,12 @@ module.exports = {
                 loader: 'url-loader'
             },
             {
-                test: /\.(js|jsx|tsx|ts)$/,
+                test: /\.(tsx|ts)$/,
                 include: [
                     path.resolve(__dirname, 'src/index.ts'),
                     path.resolve(__dirname, 'src/auth.ts'),
                 ],
                 use: [
-                    {
-                        loader: 'babel-loader',
-                    },
                     {
                         loader: 'ts-loader',
                         options: {
@@ -59,8 +53,8 @@ module.exports = {
         chunkFilename: '[name].bundle.js',
     },
     plugins: [
+        new webpack.LoaderOptionsPlugin({debug: true}),
         new CleanWebpackPlugin(),
-        new MinifyPlugin({}, {}),
         new HtmlWebpackPlugin({
             template: path.resolve(__dirname, "src", "index.html"),
             filename: "index.html",
