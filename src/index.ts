@@ -27,7 +27,7 @@ import {
     WebGLRenderer
 } from "three";
 import Fuse from 'fuse.js';
-
+import Vuetify from './plugins/vuetify';
 
 type mapItem = { objectId: string; pos: { x: number; y: number; z: number }; rot: { x: number; y: number; z: number }; modelPath: string; objectInfo: { [key: string]: any }; scale: number; name: string, defaultZoom: number, children: object[] };
 
