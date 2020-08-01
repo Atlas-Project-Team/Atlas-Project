@@ -3,6 +3,7 @@ const path = require('path');
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require('copy-webpack-plugin');
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
+const VueLoaderPlugin = require('vue-loader/lib/plugin');
 
 
 module.exports = {
@@ -56,6 +57,10 @@ module.exports = {
                     },
                 ],
             },
+            {
+                test: /\.vue$/,
+                loader: 'vue-loader'
+            },
         ],
     },
     resolve: {
@@ -72,6 +77,7 @@ module.exports = {
     plugins: [
         new webpack.LoaderOptionsPlugin({debug: true}),
         new CleanWebpackPlugin(),
+        new VueLoaderPlugin(),
         new HtmlWebpackPlugin({
             template: path.resolve(__dirname, "src", "index.html"),
             filename: "index.html",
