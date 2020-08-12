@@ -46,5 +46,5 @@ export const Default = () => ({
         mapData: {
             default: () => sampleData,
         }
-    },
+    }
 });

@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require("html-webpack-plugin");
 const CopyPlugin = require('copy-webpack-plugin');
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 const VueLoaderPlugin = require('vue-loader/lib/plugin');
-
+const { VuetifyLoaderPlugin } = require('vuetify-loader')
 
 module.exports = {
     entry: {
@@ -79,6 +79,7 @@ module.exports = {
     plugins: [
         new webpack.LoaderOptionsPlugin({debug: true}),
         new CleanWebpackPlugin(),
+        new VuetifyLoaderPlugin(),
         new VueLoaderPlugin(),
         new HtmlWebpackPlugin({
             template: path.resolve(__dirname, "src", "index.html"),
