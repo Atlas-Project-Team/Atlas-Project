@@ -15,7 +15,8 @@
     "cookie-parser": "latest",
     "firebase-admin": "latest",
     "firebase-functions": "latest",
-    "node-fetch": "^2.6.0"
+    "node-fetch": "^2.6.0",
+    "apollo-server-cloud-functions": "latest"
   },
   "devDependencies": {
     "firebase-functions-test": "^0.2.0"

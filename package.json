@@ -6,7 +6,8 @@
     "build": "webpack --config webpack.config.js",
     "build-prod": "webpack --config prod.config.js",
     "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "build-storybook": "build-storybook",
+    "test": "firebase emulators:start"
   },
   "private": true,
   "repository": {
@@ -20,9 +21,12 @@
   },
   "homepage": "https://github.com/Atlas-Project-Team/Atlas-Project#readme",
   "dependencies": {
+    "@apollo/client": "^3.1.3",
+    "apollo-server-cloud-functions": "^2.16.1",
     "babel-minify-webpack-plugin": "^0.3.1",
     "firebase": "^7.16.0",
     "fuse.js": "^6.4.1",
+    "graphql": "^15.3.0",
     "quick-score": "0.0.9",
     "three": "^0.116.0",
     "vue": "^2.6.11"
@@ -37,6 +41,7 @@
     "@types/jquery": "^3.5.0",
     "@types/node": "^13.13.5",
     "@types/stats": "^0.16.30",
+    "@vue/cli-plugin-typescript": "^4.5.3",
     "babel-loader": "^8.1.0",
     "babel-preset-vue": "^2.0.2",
     "clean-webpack-plugin": "^3.0.0",

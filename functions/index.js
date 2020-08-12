@@ -6,6 +6,7 @@ const {error} = require("firebase-functions/lib/logger");
 const serviceAccount = require('./service-account.json');
 const {oAuthConfig} = require('./info');
 const fetch = require('node-fetch');
+const { ApolloServer, gql } = require('apollo-server-cloud-functions');
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
@@ -13,7 +14,79 @@ admin.initializeApp({
 
 const db = admin.firestore();
 
-//const authorizeURL = `https://discord.com/api/oauth2/authorize?client_id=${oAuthConfig.clientID}&redirect_uri=${encodeURIComponent(oAuthConfig.redirectUri)}&response_type=code&scope=${oAuthConfig.scopes.join("%20")}&state=${state}`;
+const typeDefs = gql`
+    type Query {
+        mapData: [MapItem]
+    }
+
+    type MapItem {
+        children: [String!]!,
+        defaultZoom: Float!,
+        modelPath: String!,
+        name: String!,
+        objectInfo: [ObjectParameter]!,
+        owner: String!,
+        pos: Vector3,
+        rot: Vector3,
+        scale: Float
+    }
+
+    type ObjectParameter {
+        parameter: String!,
+        value: String!
+    }
+
+    type Vector3 {
+        x: Float,
+        y: Float,
+        z: Float
+    }
+`;
+
+const resolvers = {
+    Query: {
+        mapData: async (parent, args, context) => {
+            let mapData = [];
+            await db.collection("mapData").where("owner", "in", ['']).get().then((querySnapshot) => {
+                querySnapshot.forEach((doc) => {
+                    let data = doc.data();
+                    data.objectId = doc.id;
+                    // noinspection JSSuspiciousNameCombination
+                    data.pos = {
+                        x: data.pos.y,
+                        y: data.pos.z,
+                        z: data.pos.x
+                    };
+                    let objectInfo = [];
+                    Object.keys(data.objectInfo).forEach(v=>{
+                        let parameter = v;
+                        let value = data.objectInfo[v];
+                        objectInfo.push({parameter, value});
+                    });
+                    data.objectInfo = objectInfo;
+                    mapData.push(data);
+                });
+            });
+            return mapData;
+        },
+    },
+}
+
+const server = new ApolloServer({
+    typeDefs,
+    resolvers,
+    context: ({ req, res }) => ({
+        headers: req.headers,
+        req,
+        res,
+    }),
+    playground: false,
+    introspection: true,
+});
+
+exports.handler = server.createHandler();
+const {handler} = exports;
+exports.query = functions.https.onRequest(handler);
 
 /**
  * Redirects the User to the Discord authentication consent screen. Also the 'state' cookie is set for later state
