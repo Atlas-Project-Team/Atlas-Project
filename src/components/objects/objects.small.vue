@@ -52,7 +52,7 @@
                                 v-bind:key="item.objectId"
                                 :map-data="mapData"
                                 v-for="item in mapData"
-                                v-if="(searchResults.includes(item.objectId.toString()) || searchQuery.trim()==='') && checkFilter(item)">
+                                v-show="(searchResults.includes(item.objectId.toString()) || searchQuery.trim()==='') && checkFilter(item)">
                             <v-list-item-content>
                                 <v-list-item-title v-text="item.name"></v-list-item-title>
                             </v-list-item-content>
@@ -86,43 +86,6 @@
                 </v-card>
             </v-col>
         </v-row>
-            <!--
-            <div class="input-group mb-1">
-                <input class="form-control text-white bg-dark border-light" id="search" onsubmit="" placeholder="Search"
-                       type="search" v-model="searchQuery">
-            </div>
-            <div class="input-group mb-1">
-                <select class="custom-select bg-dark border-light text-white" id="filterBarFilterSelect"
-                        v-model="currentFilter">
-                    <option disabled selected value="Filter">Filter</option>
-                    <option v-bind:value="filter" v-for="filter in filters">{{filter}}</option>
-                </select>
-                <select class="custom-select bg-dark border-light text-white" id="filterBarFilterValue"
-                        v-model="currentFilterValue">
-                    <option disabled selected value="Value">Value</option>
-                    <option v-bind:value="value" v-for="value in getFilters(currentFilter)">{{value}}</option>
-                </select>
-                <div class="input-group-append">
-                    <button class="btn btn-outline-light" type="button"
-                            v-on:click="createFilter(currentFilter, currentFilterValue)">Filter
-                    </button>
-                </div>
-            </div>
-            <div class="mb-3" id="filters">
-                <span class="badge badge-pill badge-light m-1" v-for="(value, filter) in currentFilters">{{filter}}: {{value}} <button
-                        class="btn btn-link text-dark pt-0 pb-0 pr-0 pl-1 mb-1" v-on:click="deleteFilter(filter)">×</button></span>
-            </div>
-            <div class="h-100" id="mapData">
-                <p v-for="item in mapData">{{item.name}}</p>
-                <map-item
-                        v-bind:item="item"
-                        v-bind:key="item.objectId"
-                        v-bind:map-data="mapData"
-                        v-for="item in mapData"
-                        v-if="(searchResults.includes(item.objectId.toString()) || searchQuery.trim()==='') && checkFilter(item)"
-                ></map-item>
-            </div>
-            -->
     </v-container>
 </template>
 
@@ -150,7 +113,7 @@
         },
         computed: {
             currentItem: function() {
-                return this.mapData[this.currentlySelected];
+                return this.mapData.find(v=>v.objectId===this.currentlySelected);
             },
             searchResults: function () {
                 return this.fuse.search(this.searchQuery).map((value) => {
