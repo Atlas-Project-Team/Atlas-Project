@@ -1,7 +1,7 @@
 {
-  "name": "atlas-frontend",
+  "name": "atlas-project",
   "version": "0.1.0",
-  "description": "The Frontend Map Webapp for the Atlas Project.",
+  "description": "The Web App for the Atlas Project.",
   "scripts": {
     "build": "webpack --config webpack.config.js",
     "build-prod": "webpack --config prod.config.js",
