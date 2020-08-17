@@ -26,9 +26,10 @@ const typeDefs = gql`
         name: String!,
         objectInfo: [ObjectParameter]!,
         owner: String!,
-        pos: Vector3,
+        pos: Vector3!,
         rot: Vector3,
-        scale: Float
+        scale: Float,
+        objectId: String!
     }
 
     type ObjectParameter {

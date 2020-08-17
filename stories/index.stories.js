@@ -1,4 +1,31 @@
 import SmallObjects from '../src/components/objects/objects.small.vue';
+import client from '../src/apolloClient';
+import {gql} from "@apollo/client";
+
+let mapData = [];
+
+client.query({
+    query: gql`
+        {
+            mapData {
+                name,
+                objectId,
+                pos {x,y,z},
+                modelPath,
+                objectInfo {
+                    parameter,
+                    value
+                },
+                scale,
+                defaultZoom
+            }
+        }
+    `
+})
+.then(res => {
+    mapData = res.data.mapData;
+    console.log(mapData);
+});
 
 export default {
     title: "Objects (Small)",
@@ -13,10 +40,10 @@ const sampleData = [
             "z": 0.0
         },
         "modelPath": "Assets/models/Neptune/",
-        "objectInfo": {
-            "Object": "Planet",
-            "Type": "Gas Giant"
-        },
+        "objectInfo": [
+            {"parameter": "Object", "value": "Planet"},
+            {"parameter": "Type", "value": "Gas Giant"},
+        ],
         "scale": 10.0,
         "name": "Eos",
         "defaultZoom": 20000
@@ -31,20 +58,32 @@ const sampleData = [
             "z": 0.0
         },
         "modelPath": "Assets/models/Station/",
-        "objectInfo": {
-            "Object": "Station",
-            "Type": "Neutral"
-        },
+        "objectInfo": [
+            {"parameter": "Object", "value": "Station"},
+            {"parameter": "Type", "value": "Neutral"},
+        ],
         "defaultZoom": 500
     }
 ]
 
 export const Default = () => ({
-    components: {SmallObjects},
-    template: '<small-objects :mapData="mapData"></small-objects>',
-    props: {
-        mapData: {
-            default: () => sampleData,
+        components: {SmallObjects},
+        template: '<small-objects :mapData="mapData"></small-objects>',
+        props: {
+            mapData: {
+                default: () => sampleData,
+            }
         }
     }
-});
+);
+
+export const LiveData = () => ({
+        components: {SmallObjects},
+        template: '<small-objects :mapData="mapData"></small-objects>',
+        props: {
+            mapData: {
+                default: () => mapData,
+            }
+        }
+    }
+);

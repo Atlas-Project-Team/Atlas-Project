@@ -68,10 +68,10 @@
                         <v-list dense>
                             <v-subheader>Object Details</v-subheader>
                             <v-list-item
-                                v-for="(property, key) in currentItem.objectInfo"
-                                :key="key"
+                                v-for="{value, parameter} in currentItem.objectInfo"
+                                :key="`${parameter}:${value}`"
                                 style="height: 20px; min-height: 20px;">
-                                <strong>{{key}}</strong>: {{property}}
+                                <strong>{{parameter}}</strong>: {{value}}
                             </v-list-item>
                         </v-list>
                     </v-card-text>
@@ -89,7 +89,7 @@
     </v-container>
 </template>
 
-<script>
+<script lang="js">
     import Fuse from "fuse.js";
     import Vue from "vue";
 
@@ -113,7 +113,7 @@
         },
         computed: {
             currentItem: function() {
-                return this.mapData.find(v=>v.objectId===this.currentlySelected);
+                return this.mapData[this.currentlySelected];
             },
             searchResults: function () {
                 return this.fuse.search(this.searchQuery).map((value) => {

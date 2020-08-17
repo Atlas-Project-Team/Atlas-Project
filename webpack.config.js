@@ -79,8 +79,8 @@ module.exports = {
     plugins: [
         new webpack.LoaderOptionsPlugin({debug: true}),
         new CleanWebpackPlugin(),
-        new VuetifyLoaderPlugin(),
         new VueLoaderPlugin(),
+        new VuetifyLoaderPlugin(),
         new HtmlWebpackPlugin({
             template: path.resolve(__dirname, "src", "index.html"),
             filename: "index.html",
