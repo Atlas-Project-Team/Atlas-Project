@@ -1,4 +1,4 @@
-import SmallObjects from '../src/components/objects/objects.small.vue';
+import SmallObjects from '../src/components/objects/objects.vue';
 import client from '../src/apolloClient';
 import {gql} from "@apollo/client";
 
@@ -28,7 +28,7 @@ client.query({
 });
 
 export default {
-    title: "Objects (Small)",
+    title: "Objects",
 }
 
 const sampleData = [

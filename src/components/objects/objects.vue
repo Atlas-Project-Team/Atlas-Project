@@ -1,5 +1,5 @@
 <template>
-    <v-container fluid style="width: 33vw; height: 50vh; background-color: #343a40">
+    <v-container fluid>
         <h4 style="color: white; text-align: right">Objects</h4>
         <v-text-field
             v-model="searchQuery"
@@ -7,7 +7,7 @@
             dense
             dark
             ></v-text-field>
-        <v-row dense>
+        <v-row dense no-gutters>
             <v-col cols="5">
                 <v-select
                         v-model="currentFilter"
@@ -18,7 +18,7 @@
                         dark
                 ></v-select>
             </v-col>
-            <v-col cols="4">
+            <v-col cols="4" sm="5">
                 <v-select
                         v-model="currentFilterValue"
                         :items="getFilters(currentFilter)"
@@ -29,20 +29,20 @@
                 ></v-select>
             </v-col>
             <v-col cols="2">
-                <v-btn outlined dark v-on:click="createFilter(currentFilter, currentFilterValue)">Apply</v-btn>
+                <v-btn height="40" block outlined dark v-on:click="createFilter(currentFilter, currentFilterValue)">Apply</v-btn>
             </v-col>
         </v-row>
         <v-row dense v-if="Object.keys(currentFilters).length>0">
             <v-chip
-                    v-for="(value, filter) in currentFilters"
-                    :key="`${filter}:${value}`"
+                    v-for="({parameter, value}) in currentFilters"
+                    :key="`${parameter}:${value}`"
                     class="ml-2 mr-2"
                     close
-                    @click:close="deleteFilter(filter)"
-            >{{filter}}: {{value}}</v-chip>
+                    @click:close="deleteFilter({parameter, value})"
+            >{{parameter}}: {{value}}</v-chip>
         </v-row>
         <v-row style="color: white">
-            <v-col>
+            <v-col cols="12" sm="6" order="2" order-sm="1">
                 <v-list flat dark dense style="background-color: #343a40">
                     <v-list-item-group
                         v-model="currentlySelected"
@@ -60,7 +60,7 @@
                     </v-list-item-group>
                 </v-list>
             </v-col>
-            <v-col>
+            <v-col cols="12" sm="6" order="1" order-sm="2">
                 <p v-if="currentItem===undefined">No map item currently selected. <br/>Select an item from the list to view its details.</p>
                 <v-card v-else dark>
                     <v-card-title>{{currentItem.name}}</v-card-title>
@@ -92,6 +92,8 @@
 <script lang="js">
     import Fuse from "fuse.js";
     import Vue from "vue";
+    import _ from "lodash";
+    import {parameters} from "../../../.storybook/preview";
 
     export default {
         name: "objects.small",
@@ -107,7 +109,7 @@
                 searchQuery: "",
                 currentFilter: "Filter",
                 currentFilterValue: "Value",
-                currentFilters: {},
+                currentFilters: [],
                 currentlySelected: undefined
             }
         },
@@ -128,9 +130,9 @@
             filters: function () {
                 let filters = [];
                 this.mapData.forEach((item) => {
-                    Object.keys(item.objectInfo).forEach(key => {
-                        if (!filters.includes(key)) {
-                            filters.push(key)
+                    item.objectInfo.forEach(({parameter}) => {
+                        if (!filters.includes(parameter)) {
+                            filters.push(parameter)
                         }
                     })
                 });
@@ -141,8 +143,8 @@
             getFilters: function (filter) {
                 let filters = [];
                 this.mapData.forEach((item) => {
-                    if (Object.keys(item.objectInfo).includes(filter)) {
-                        filters.push(item.objectInfo[filter].toString())
+                    if (item.objectInfo.map(a=>a.parameter).includes(filter)) {
+                        filters.push(item.objectInfo.find(item=>item.parameter===filter).value.toString())
                     }
                 });
                 return filters
@@ -152,27 +154,23 @@
                 if (filter === "Filter" || value === "Value") {
                     return
                 }
-                this.currentFilters[filter] = value;
+                this.currentFilters.push({parameter: filter, value});
                 this.currentFilter = "Filter";
                 this.currentFilterValue = "Value";
             }
             ,
             deleteFilter: function (filter) {
-                if (Object.keys(this.currentFilters).includes(filter)) {
-                    Vue.delete(this.currentFilters, filter)
-                }
+                this.currentFilters.forEach(v => {
+                    if (_.isEqual({parameter: v.parameter, value: v.value}, filter)) {
+                        Vue.delete(this.currentFilters, this.currentFilters.findIndex(v=>_.isEqual({parameter: v.parameter, value: v.value}, filter)))
+                    }
+                })
             }
             ,
             checkFilter: function (item) {
-                for (let filter in this.currentFilters) {
-                    // noinspection JSUnfilteredForInLoop
-                    if (!item.objectInfo.hasOwnProperty(filter)) {
+                for (let filter of this.currentFilters) {
+                    if (!item.objectInfo.some(v=>_.isEqual({parameter: v.parameter, value: v.value}, filter))) {
                         return false
-                    } else {
-                        // noinspection JSUnfilteredForInLoop
-                        if (item.objectInfo[filter] !== this.currentFilters[filter]) {
-                            return false
-                        }
                     }
                 }
                 return true
