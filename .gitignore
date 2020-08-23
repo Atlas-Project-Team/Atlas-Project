@@ -76,3 +76,4 @@ node_modules/
 
 !/functions/info.js
 /dist/
+!/functions/.runtimeconfig.json

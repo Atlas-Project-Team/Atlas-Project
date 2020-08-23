@@ -4,7 +4,7 @@ import fetch from 'node-fetch';
 
 
 const client = new ApolloClient({
-    uri: 'https://cors-anywhere.herokuapp.com/https://us-central1-atlas-project-274801.cloudfunctions.net/query',
+    uri: 'https://us-central1-atlas-project-274801.cloudfunctions.net/api/graphql',
     cache: new InMemoryCache(),
 });
 

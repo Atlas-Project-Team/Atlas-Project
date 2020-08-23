@@ -12,11 +12,15 @@
     "node": "12"
   },
   "dependencies": {
+    "apollo-server-cloud-functions": "latest",
+    "apollo-server-express": "^2.16.1",
     "cookie-parser": "latest",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
     "firebase-admin": "latest",
     "firebase-functions": "latest",
     "node-fetch": "^2.6.0",
-    "apollo-server-cloud-functions": "latest"
+    "simple-oauth2": "^4.1.0"
   },
   "devDependencies": {
     "firebase-functions-test": "^0.2.0"

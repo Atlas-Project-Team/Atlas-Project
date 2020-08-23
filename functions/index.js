@@ -6,7 +6,11 @@ const {error} = require("firebase-functions/lib/logger");
 const serviceAccount = require('./service-account.json');
 const {oAuthConfig} = require('./info');
 const fetch = require('node-fetch');
-const { ApolloServer, gql } = require('apollo-server-cloud-functions');
+const { ApolloServer, gql } = require('apollo-server-express');
+// CORS Express middleware to enable CORS Requests.
+const cors = require('cors');
+const express = require('express');
+
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
@@ -16,7 +20,8 @@ const db = admin.firestore();
 
 const typeDefs = gql`
     type Query {
-        mapData: [MapItem]
+        getAvailableCollections: [MapCollection!]!,
+        getUserName(uid: String!): String
     }
 
     type MapItem {
@@ -29,7 +34,15 @@ const typeDefs = gql`
         pos: Vector3!,
         rot: Vector3,
         scale: Float,
-        objectId: String!
+        objectId: String!,
+        collection: String
+    }
+    
+    type MapCollection {
+        name: String!,
+        mapItems: [MapItem!]!,
+        owner: String!,
+        visibility: String
     }
 
     type ObjectParameter {
@@ -46,33 +59,39 @@ const typeDefs = gql`
 
 const resolvers = {
     Query: {
-        mapData: async (parent, args, context) => {
-            let mapData = [];
-            await db.collection("mapData").where("owner", "in", ['']).get().then((querySnapshot) => {
-                querySnapshot.forEach((doc) => {
-                    let data = doc.data();
-                    data.objectId = doc.id;
-                    // noinspection JSSuspiciousNameCombination
-                    data.pos = {
-                        x: data.pos.y,
-                        y: data.pos.z,
-                        z: data.pos.x
-                    };
-                    let objectInfo = [];
-                    Object.keys(data.objectInfo).forEach(v=>{
-                        let parameter = v;
-                        let value = data.objectInfo[v];
-                        objectInfo.push({parameter, value});
-                    });
-                    data.objectInfo = objectInfo;
-                    mapData.push(data);
+        getAvailableCollections: async () => {
+            let collections = [];
+            let querySnapshot = await db.collection("mapCollections").where("owner", "in", ['']).get()
+            querySnapshot.forEach((doc)=>{
+                let data = doc.data();
+                data.name = data.collectionName
+                data.mapItems.map((mapItem, index) => {
+                    mapItem.objectId = `${doc.id}.${index}`;
+                    mapItem.collection = doc.id;
+                    mapItem.owner = data.owner;
                 });
+                collections.push(data);
             });
-            return mapData;
+            return collections;
         },
+        getUserName: async (parent, args, context, info) => {
+            if(args.uid){
+                let user = await admin.auth().getUser(args.uid);
+                if(user){
+                    return user.displayName;
+                }
+            }
+            return null
+        }
     },
 }
 
+
+process.env.APOLLO_KEY = functions.config().atlas.apollo_key;
+
+
+const app = express();
+app.use(cors());
 const server = new ApolloServer({
     typeDefs,
     resolvers,
@@ -81,13 +100,16 @@ const server = new ApolloServer({
         req,
         res,
     }),
+    engine: {
+        reportSchema: true,
+        variant: "current"
+    },
     playground: false,
     introspection: true,
 });
+server.applyMiddleware({app});
 
-exports.handler = server.createHandler();
-const {handler} = exports;
-exports.query = functions.https.onRequest(handler);
+exports.api = functions.https.onRequest(app);
 
 /**
  * Redirects the User to the Discord authentication consent screen. Also the 'state' cookie is set for later state
