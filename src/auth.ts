@@ -32,5 +32,5 @@ firebase.auth().onAuthStateChanged(function (user) {
 });
 
 document.getElementById("discordButton").addEventListener("click", () => {
-    window.open('/auth/popup.html', 'name', 'height=585,width=400');
+    window.open('./auth/popup.html', 'name', 'height=585,width=400');
 });

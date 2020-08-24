@@ -6,11 +6,7 @@ const {error} = require("firebase-functions/lib/logger");
 const serviceAccount = require('./service-account.json');
 const {oAuthConfig} = require('./info');
 const fetch = require('node-fetch');
-const { ApolloServer, gql } = require('apollo-server-express');
-// CORS Express middleware to enable CORS Requests.
-const cors = require('cors');
-const express = require('express');
-
+const {ApolloServer, gql} = require('apollo-server-cloud-functions');
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
@@ -21,7 +17,7 @@ const db = admin.firestore();
 const typeDefs = gql`
     type Query {
         getAvailableCollections: [MapCollection!]!,
-        getUserName(uid: String!): String
+        getUserName(uid: String): String
     }
 
     type MapItem {
@@ -37,7 +33,7 @@ const typeDefs = gql`
         objectId: String!,
         collection: String
     }
-    
+
     type MapCollection {
         name: String!,
         mapItems: [MapItem!]!,
@@ -62,7 +58,7 @@ const resolvers = {
         getAvailableCollections: async () => {
             let collections = [];
             let querySnapshot = await db.collection("mapCollections").where("owner", "in", ['']).get()
-            querySnapshot.forEach((doc)=>{
+            querySnapshot.forEach((doc) => {
                 let data = doc.data();
                 data.name = data.collectionName
                 data.mapItems.map((mapItem, index) => {
@@ -75,13 +71,19 @@ const resolvers = {
             return collections;
         },
         getUserName: async (parent, args, context, info) => {
-            if(args.uid){
+            console.log(context.req.user);
+            if (args.uid) {
                 let user = await admin.auth().getUser(args.uid);
-                if(user){
+                if (user) {
                     return user.displayName;
                 }
+                return null
+            }else{
+                if(context.req.user){
+                    return context.req.user.name;
+                }
+                return null;
             }
-            return null
         }
     },
 }
@@ -89,13 +91,10 @@ const resolvers = {
 
 process.env.APOLLO_KEY = functions.config().atlas.apollo_key;
 
-
-const app = express();
-app.use(cors());
 const server = new ApolloServer({
     typeDefs,
     resolvers,
-    context: ({ req, res }) => ({
+    context: ({req, res}) => ({
         headers: req.headers,
         req,
         res,
@@ -107,9 +106,38 @@ const server = new ApolloServer({
     playground: false,
     introspection: true,
 });
-server.applyMiddleware({app});
 
-exports.api = functions.https.onRequest(app);
+let handler = server.createHandler({
+    cors: {
+        origin: '*',
+        credentials: true,
+    },
+});
+
+const authenticate = async (req, res, next) => {
+    // Assume user is not logged in to begin with.
+    req.user = null;
+    if (!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) {
+        // Unauthorized request. Proceed anonymously.
+        next(req, res);
+        return;
+    }
+    const idToken = req.headers.authorization.split('Bearer ')[1];
+    admin.auth().verifyIdToken(idToken)
+        .then(decodedIdToken => {
+            req.user = decodedIdToken;
+            next(req, res)
+        })
+        .catch((e) => {
+            console.log("Authentication failure. Proceeding with anonymous request.");
+            next(req, res);
+        });
+};
+
+exports.api = functions.https.onRequest((req, res) => {
+    authenticate(req, res, handler)
+        .catch(err => console.error(err));
+});
 
 /**
  * Redirects the User to the Discord authentication consent screen. Also the 'state' cookie is set for later state
@@ -169,7 +197,7 @@ exports.token = functions.https.onRequest(async (req, res) => {
             revokePath: '/api/oauth2/token/revoke'
         },
     };
-    const {ClientCredentials, ResourceOwnerPassword, AuthorizationCode} = require('simple-oauth2');
+    const {AuthorizationCode} = require('simple-oauth2');
     const client = new AuthorizationCode(config);
 
     try {

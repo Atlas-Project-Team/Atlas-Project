@@ -18,7 +18,7 @@
     "cors": "^2.8.5",
     "express": "^4.17.1",
     "firebase-admin": "latest",
-    "firebase-functions": "latest",
+    "firebase-functions": "^3.11.0",
     "node-fetch": "^2.6.0",
     "simple-oauth2": "^4.1.0"
   },
