@@ -16,12 +16,13 @@ const db = admin.firestore();
 
 const typeDefs = gql`
     type Query {
-        getAvailableCollections: [MapCollection!]!,
-        getUserName(uid: String): String
+        getCollections: [MapCollection!]!,
+        getMapData: [MapItem!]!,
+        getUserName(uid: ID): String
     }
 
     type MapItem {
-        children: [String!]!,
+        children: [ID!]!,
         defaultZoom: Float!,
         modelPath: String!,
         name: String!,
@@ -30,14 +31,14 @@ const typeDefs = gql`
         pos: Vector3!,
         rot: Vector3,
         scale: Float,
-        objectId: String!,
-        collection: String
+        objectId: ID!,
+        collection: ID!
     }
 
     type MapCollection {
         name: String!,
         mapItems: [MapItem!]!,
-        owner: String!,
+        owner: ID!,
         visibility: String
     }
 
@@ -55,12 +56,12 @@ const typeDefs = gql`
 
 const resolvers = {
     Query: {
-        getAvailableCollections: async () => {
+        getCollections: async (parent, args, context, info) => {
             let collections = [];
-            let querySnapshot = await db.collection("mapCollections").where("owner", "in", ['']).get()
+            let querySnapshot = await db.collection("mapCollections").where("owner", "in", (context.req.user ? ['', context.req.user.uid] : [''])).get()
             querySnapshot.forEach((doc) => {
                 let data = doc.data();
-                data.name = data.collectionName
+                data.name = data.collectionName;
                 data.mapItems.map((mapItem, index) => {
                     mapItem.objectId = `${doc.id}.${index}`;
                     mapItem.collection = doc.id;
@@ -70,6 +71,20 @@ const resolvers = {
             });
             return collections;
         },
+        getMapData: async (parent, args, context, info) => {
+            let mapData = [];
+            let querySnapshot = await db.collection("mapCollections").where("owner", "in", (context.req.user ? ['', context.req.user.uid] : [''])).get()
+            querySnapshot.forEach((doc) => {
+                let data = doc.data();
+                data.mapItems.map((mapItem, index) => {
+                    mapItem.objectId = `${doc.id}.${index}`;
+                    mapItem.collection = doc.id;
+                    mapItem.owner = data.owner;
+                });
+                mapData.push(...data.mapItems);
+            });
+            return mapData;
+        },
         getUserName: async (parent, args, context, info) => {
             console.log(context.req.user);
             if (args.uid) {
@@ -78,8 +93,8 @@ const resolvers = {
                     return user.displayName;
                 }
                 return null
-            }else{
-                if(context.req.user){
+            } else {
+                if (context.req.user) {
                     return context.req.user.name;
                 }
                 return null;
