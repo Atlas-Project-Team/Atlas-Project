@@ -20,13 +20,42 @@ const typeDefs = gql`
         getMapData: [MapItem!]!,
         getUserName(uid: ID): String
     }
+    
+    type Mutation {
+        updateCollection(id: ID!, name: String, mapItems: [MapItemInput!], owner: ID): CollectionMutationResponse
+    }
+    
+    input MapItemInput {
+        children: [ID!]!,
+        defaultZoom: Float!,
+        modelPath: String!,
+        name: String!,
+        objectInfo: [ObjectParameterInput!]!,
+        owner: String!,
+        pos: Vector3Input!,
+        rot: Vector3Input,
+        scale: Float
+    }
+    
+    type CollectionMutationResponse implements MutationResponse {
+        code: String!,
+        success: Boolean!,
+        message: String!,
+        collection: MapCollection
+    }
+    
+    interface MutationResponse {
+        code: String!,
+        success: Boolean!,
+        message: String!
+    }
 
     type MapItem {
         children: [ID!]!,
         defaultZoom: Float!,
         modelPath: String!,
         name: String!,
-        objectInfo: [ObjectParameter]!,
+        objectInfo: [ObjectParameter!]!,
         owner: String!,
         pos: Vector3!,
         rot: Vector3,
@@ -46,8 +75,19 @@ const typeDefs = gql`
         parameter: String!,
         value: String!
     }
+    
+    input ObjectParameterInput {
+        parameter: String!,
+        value: String!
+    }
 
     type Vector3 {
+        x: Float,
+        y: Float,
+        z: Float
+    }
+
+    input Vector3Input {
         x: Float,
         y: Float,
         z: Float
@@ -101,6 +141,20 @@ const resolvers = {
             }
         }
     },
+    Mutation: {
+        updateCollection: async (parent, args, context, info) => {
+            let response = {
+                code: "",
+                success: false,
+                message: "",
+                collection: null
+            }
+            response.code = "Not Implemented";
+            response.message = "This mutator has not been implemented yet.";
+            return response;
+
+        }
+    }
 }
 
 
