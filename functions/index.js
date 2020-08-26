@@ -144,8 +144,7 @@ const authenticate = async (req, res, next) => {
             next(req, res)
         })
         .catch((e) => {
-            console.log("Authentication failure. Proceeding with anonymous request.");
-            next(req, res);
+            res.status(401).send('Authentication error. Most likely invalid credentials.')
         });
 };
 
