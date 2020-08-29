@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="stylesheet.css" />
+    <title>Atlas Project-Come Help</title>
+</head>
+
+<body>
+
+    <header>
+        <nav>
+            <nav>
+                <li><a href="index.html">Home</a></li>
+                <li><a href="Project-status.html">Project status</a></li>
+                <li><a href="How-you-can-help.html">How you can help</a></li>
+                <li><a href="Important-Peeps.html">Important peeps</a></li>
+            </nav>
+        </nav>
+        <h1>How you can help</h1>
+    </header>
+    <section>How you can help.</section>
+    <p>Want to help drive the future of starbase? Come join us on the Atlas Project! We are always looking for people that want to help. We are currently looking for a few key types of people:</p>
+    <ul>
+        <li> - Explorers - This map isn't going to chart itself. Come join us and a few other factions who have agreed to support our efforts in delivering the most comprehensive set of publicly available map data throughout starbase.</li>
+        <li> - Artists - Come help us define the visual identity of what we hope will become "the" Map for starbase. We are looking for modellers and artists who can help us to create the unique assets that will give the Atlas Map it's flair and design that many players will see and use.</li>
+        <li> - Developers - Interested in learning some new technologies or already passionate about Vue, Firebase, TypeScript, Three.js or anything else we use (check out our GitHub!)? Then come join us and help us make Atlas the best, most performant,most reliable map it can be!</li>
+        <li> - Fans - We need people to help guide our vision. Come join our discord and give us insights into what you want the map to be. We try to post as much content that we've created, when we do it is so we can get as much feedback even before we launch. With your inputs, we cancreate features and designs that never would have happened without your help.</li>
+    </ul>
+    <p>If any of these sounds like you, come on over and join our Discord! It's a super friendly place where we hang out, chat, share ideas and progress and help each other to learn and grow. plus, we value each other above anything else, so you will never be forced or even expected to do anything you don't want to, and if you can't make it or have to do something else, it's ok life happens and we are a team and that's what makes this project so special. It's built by an entire community of people who help each other to build the very best things we can, and it'll be even better with you!</p>
+    <footer><small>All images courtesy of Frozenbyte<br>Starbase and its characters, names and other material &copy; Frozenbyte Oy, used with permission but without endorsement.</small></footer>
+</body>
+</html>
