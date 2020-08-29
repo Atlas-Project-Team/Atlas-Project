@@ -7,6 +7,7 @@ const serviceAccount = require('./service-account.json');
 const {oAuthConfig} = require('./info');
 const fetch = require('node-fetch');
 const {ApolloServer, gql} = require('apollo-server-cloud-functions');
+const _ = require('lodash');
 
 admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
@@ -20,11 +21,11 @@ const typeDefs = gql`
         getMapData: [MapItem!]!,
         getUserName(uid: ID): String
     }
-    
+
     type Mutation {
-        updateCollection(id: ID!, name: String, mapItems: [MapItemInput!], owner: ID): CollectionMutationResponse
+        updateCollection(id: ID!, name: String, owner: ID): CollectionMutationResponse
     }
-    
+
     input MapItemInput {
         children: [ID!]!,
         defaultZoom: Float!,
@@ -36,14 +37,14 @@ const typeDefs = gql`
         rot: Vector3Input,
         scale: Float
     }
-    
+
     type CollectionMutationResponse implements MutationResponse {
         code: String!,
         success: Boolean!,
         message: String!,
         collection: MapCollection
     }
-    
+
     interface MutationResponse {
         code: String!,
         success: Boolean!,
@@ -75,7 +76,7 @@ const typeDefs = gql`
         parameter: String!,
         value: String!
     }
-    
+
     input ObjectParameterInput {
         parameter: String!,
         value: String!
@@ -94,6 +95,22 @@ const typeDefs = gql`
     }
 `;
 
+const dataFormatters = {
+    firebaseToQuery: {
+        collection: function(data, id){
+            data.name = data.collectionName;
+            data.mapItems.map((mapItem, index) => dataFormatters.firebaseToQuery.mapItem(mapItem, index, id, data.owner));
+            return data;
+        },
+        mapItem: function(mapItem, index, collectionId, collectionOwner){
+            mapItem.objectId = `${collectionId}.${index}`;
+            mapItem.collection = collectionId;
+            mapItem.owner = collectionOwner;
+            return mapItem;
+        }
+    }
+}
+
 const resolvers = {
     Query: {
         getCollections: async (parent, args, context, info) => {
@@ -101,13 +118,7 @@ const resolvers = {
             let querySnapshot = await db.collection("mapCollections").where("owner", "in", (context.req.user ? ['', context.req.user.uid] : [''])).get()
             querySnapshot.forEach((doc) => {
                 let data = doc.data();
-                data.name = data.collectionName;
-                data.mapItems.map((mapItem, index) => {
-                    mapItem.objectId = `${doc.id}.${index}`;
-                    mapItem.collection = doc.id;
-                    mapItem.owner = data.owner;
-                });
-                collections.push(data);
+                collections.push(dataFormatters.firebaseToQuery.collection(data, doc.id));
             });
             return collections;
         },
@@ -116,11 +127,7 @@ const resolvers = {
             let querySnapshot = await db.collection("mapCollections").where("owner", "in", (context.req.user ? ['', context.req.user.uid] : [''])).get()
             querySnapshot.forEach((doc) => {
                 let data = doc.data();
-                data.mapItems.map((mapItem, index) => {
-                    mapItem.objectId = `${doc.id}.${index}`;
-                    mapItem.collection = doc.id;
-                    mapItem.owner = data.owner;
-                });
+                data.mapItems.map((mapItem, index) => dataFormatters.firebaseToQuery.mapItem(mapItem, index, doc.id, data.owner));
                 mapData.push(...data.mapItems);
             });
             return mapData;
@@ -143,16 +150,78 @@ const resolvers = {
     },
     Mutation: {
         updateCollection: async (parent, args, context, info) => {
-            let response = {
-                code: "",
+            let res = {
+                code: "Unspecified Failure",
                 success: false,
-                message: "",
+                message: "The mutation resolver completed the request without modifying the response. This should never happen. Please contact BenCo or another lead developer!",
                 collection: null
             }
-            response.code = "Not Implemented";
-            response.message = "This mutator has not been implemented yet.";
-            return response;
-
+            let existingCollectionRef = db.collection('mapCollections').doc(args.id)
+            let existingCollection = await existingCollectionRef.get();
+            if (!existingCollection.exists) {
+                res.code = "Collection Not Found";
+                res.message = "There were no collections found in the database at this id. Did you make sure you used a valid id?";
+            } else if (existingCollection.data().owner !== "") {
+                if (context.req.user) {
+                    if (context.req.user.uid === existingCollection.data().owner) {
+                        // Valid authentication.
+                        let properties = Object.keys(args);
+                        let updateObject = {};
+                        if (properties.includes("name")) {
+                            updateObject.collectionName = args.name;
+                        }
+                        if (properties.includes("owner")) {
+                            let checkUser = await admin.auth().getUser(args.owner);
+                            if (checkUser) {
+                                // UID Exists.
+                                updateObject.owner = args.owner;
+                            } else {
+                                res.code = "Invalid Argument";
+                                res.message = "You have supplied a uid that does not exist in the application. The query has been terminated to prevent orphaned collections.";
+                                return res;
+                            }
+                        }
+                        if (Object.keys(updateObject).length > 0) {
+                            if (Object.keys(updateObject).every(key => existingCollection.data()[key] === updateObject[key])) {
+                                res.code = "No Changes.";
+                                res.success = true;
+                                res.message = "The changes have already been applied. No operation occurred.";
+                                res.collection = dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
+                                return res
+                            } else {
+                                let res = await existingCollectionRef.update(updateObject);
+                                if (res) {
+                                    res.code = "Success";
+                                    res.success = true;
+                                    res.message = "The changes have been applied.";
+                                    let result = dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
+                                    Object.keys(args).filter(arg=>['name', 'owner'].includes(arg)).forEach(key=>{
+                                        result[key] = args[key]
+                                    })
+                                    res.collection = result;
+                                    return res
+                                }
+                            }
+                        } else {
+                            res.code = "No Arguments";
+                            res.success = true;
+                            res.message = "You did not supply any arguments, as a result, nothing was changed... successfully?";
+                            res.collection = dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
+                            return res
+                        }
+                    } else {
+                        res.code = "Access Denied";
+                        res.message = "You are not signed in to a valid Atlas user account. Please ensure you have used a valid and current auth token.";
+                    }
+                } else {
+                    res.code = "Access Denied";
+                    res.message = "You are not signed in to a valid Atlas user account. Please ensure you have used a valid and current auth token.";
+                }
+            } else {
+                res.code = "Access Denied";
+                res.message = "You cannot modify owner-less resources via the api.";
+            }
+            return res;
         }
     }
 }
@@ -198,7 +267,7 @@ const authenticate = async (req, res, next) => {
             next(req, res)
         })
         .catch((e) => {
-            res.status(401).send('Authentication error. Most likely invalid credentials.')
+            res.status(401).send(`Authentication error: ${e.code} (${e.message}).`)
         });
 };
 
