@@ -1,6 +1,5 @@
 <template>
     <v-container fluid>
-        <h4 style="color: white; text-align: right">Objects</h4>
         <v-text-field
             v-model="searchQuery"
             placeholder="Search"
@@ -66,14 +65,25 @@
                     <v-card-title>{{currentItem.name}}</v-card-title>
                     <v-card-text>
                         <v-list dense>
-                            <v-subheader>Object Details</v-subheader>
+                            <v-subheader>Position (ISAN)</v-subheader>
                             <v-list-item
-                                v-for="{value, parameter} in currentItem.objectInfo"
+                                v-for="(value, parameter) in currentItem.pos"
                                 :key="`${parameter}:${value}`"
-                                style="height: 20px; min-height: 20px;">
+                                style="height: 20px; min-height: 20px;"
+                                v-show="['x','y','z'].includes(parameter)">
                                 <strong>{{parameter}}</strong>: {{value}}
                             </v-list-item>
                         </v-list>
+                        <v-list dense>
+                            <v-subheader>Object Details</v-subheader>
+                            <v-list-item
+                                    v-for="{value, parameter} in currentItem.objectInfo"
+                                    :key="`${parameter}:${value}`"
+                                    style="height: 20px; min-height: 20px;">
+                                <strong>{{parameter}}</strong>: {{value}}
+                            </v-list-item>
+                        </v-list>
+                        <v-subheader>Map-Item Creator:&nbsp;<span style="color: white">{{currentItem.owner === "" ? "N/A" : currentItem.owner}}</span> <!--TODO RESOLVE OWNER ID TO USERNAME--></v-subheader>
                     </v-card-text>
                     <v-card-actions>
                         <v-btn
@@ -100,6 +110,11 @@
         props: {
             mapData: {
                 type: Array,
+                required: true,
+                default: () => ([])
+            },
+            user: {
+                type: Object,
                 required: true,
                 default: () => ({})
             }

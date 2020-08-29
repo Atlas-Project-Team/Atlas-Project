@@ -36,6 +36,7 @@ declare global {
         signOut: () => void;
         lookAt: (arg: string) => void;
         openItem: (arg: string) => void;
+        firebase: any;
     }
 
     // noinspection JSUnusedGlobalSymbols
@@ -214,6 +215,8 @@ window.signOut = (): void => {
             console.error(error);
         });
 };
+
+window.firebase = firebase;
 
 interface Asteroid {
     object: Object3D;

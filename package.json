@@ -25,6 +25,7 @@
     "apollo-server-cloud-functions": "^2.16.1",
     "babel-minify-webpack-plugin": "^0.3.1",
     "firebase": "^7.16.0",
+    "firebase-functions": "^3.10.0",
     "fuse.js": "^6.4.1",
     "graphql": "^15.3.0",
     "lodash": "^4.17.20",

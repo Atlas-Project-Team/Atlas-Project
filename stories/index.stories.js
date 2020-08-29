@@ -17,7 +17,8 @@ client.query({
                     value
                 },
                 scale,
-                defaultZoom
+                defaultZoom,
+                owner,
             }
         }
     `
@@ -46,7 +47,8 @@ const sampleData = [
         ],
         "scale": 10.0,
         "name": "Eos",
-        "defaultZoom": 20000
+        "defaultZoom": 20000,
+        "owner": ""
     },
     {
         "scale": 1.0,
@@ -62,7 +64,8 @@ const sampleData = [
             {"parameter": "Object", "value": "Station"},
             {"parameter": "Type", "value": "Neutral"},
         ],
-        "defaultZoom": 500
+        "defaultZoom": 500,
+        "owner": ""
     }
 ]
 
