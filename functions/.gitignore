@@ -4,4 +4,4 @@ typings/
 ../Frontend/functions/node_modules/
 /service-account.json
 /info.js
-!/.runtimeconfig.json
+/.runtimeconfig.json

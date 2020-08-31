@@ -23,7 +23,9 @@ const typeDefs = gql`
     }
 
     type Mutation {
-        updateCollection(id: ID!, name: String, owner: ID): CollectionMutationResponse
+        updateCollection(id: ID!, name: String, owner: ID): CollectionMutationResponse,
+        createCollection(name: String!): CollectionMutationResponse,
+        deleteCollection(id: ID!): CollectionMutationResponse
     }
 
     input MapItemInput {
@@ -168,7 +170,13 @@ const resolvers = {
                         let properties = Object.keys(args);
                         let updateObject = {};
                         if (properties.includes("name")) {
-                            updateObject.collectionName = args.name;
+                            if(args.name.trim() !== ""){
+                                updateObject.collectionName = args.name;
+                            }else{
+                                res.code = "Invalid Argument";
+                                res.message = "You have supplied a name that does not contain any non-whitespace characters. The query has been terminated to prevent excessively stupid collection names.";
+                                return res;
+                            }
                         }
                         if (properties.includes("owner")) {
                             let checkUser = await admin.auth().getUser(args.owner);
@@ -222,6 +230,78 @@ const resolvers = {
                 res.message = "You cannot modify owner-less resources via the api.";
             }
             return res;
+        },
+        createCollection: async (parent, args, context, info) => {
+            let res = {
+                code: "Unspecified Failure",
+                success: false,
+                message: "The mutation resolver completed the request without modifying the response. This should never happen. Please contact BenCo or another lead developer!",
+                collection: null
+            }
+            if(context.req.user){
+                let collectionObject = {};
+                collectionObject.owner = context.req.user.uid;
+                if(args.name.trim() === ""){
+                    res.code = "Invalid Argument";
+                    res.message = "You have supplied a name that does not contain any non-whitespace characters. The query has been terminated to prevent excessively stupid collection names.";
+                    return res;
+                }
+                collectionObject.collectionName = args.name;
+                collectionObject.visibility = "Private";
+                collectionObject.mapItems = [];
+                const docRef = await db.collection('mapCollections').add(collectionObject);
+                const doc = await docRef.get();
+                let data = doc.data();
+                res.collection = dataFormatters.firebaseToQuery.collection(data, doc.id);
+                res.code = "Success";
+                res.success = true;
+                res.message = "The collection has been created.";
+            }else{
+                res.code = "Access Denied";
+                res.message = "You must be signed in to create a collection.";
+            }
+            return res
+        },
+        deleteCollection: async (parent, args, context, info) => {
+            let res = {
+                code: "Unspecified Failure",
+                success: false,
+                message: "The mutation resolver completed the request without modifying the response. This should never happen. Please contact BenCo or another lead developer!",
+                collection: null
+            }
+            if(context.req.user){
+                let existingCollectionRef = db.collection('mapCollections').doc(args.id)
+                let existingCollection = await existingCollectionRef.get();
+                if (!existingCollection.exists) {
+                    res.code = "Collection Not Found";
+                    res.message = "There were no collections found in the database at this id. Did you make sure you used a valid id?";
+                    return res;
+                } else if (existingCollection.data().owner !== "") {
+                    if(existingCollection.data().owner === context.req.user.uid) {
+                        // Correct user
+                        const docRef = await existingCollectionRef.delete();
+                        if(docRef){
+                            res.code = "Success";
+                            res.success = true;
+                            res.message = "The collection has been deleted.";
+                        } else {
+                            res.code = "Null Response";
+                            res.success = false;
+                            res.message = "The database returned a null response. The collection may have been deleted successfully, but you should attempt to retrieve it to verify this.";
+                        }
+                    } else {
+                        res.code = "Access Denied";
+                        res.message = "You cannot delete a collection that is owned by someone else.";
+                    }
+                } else {
+                    res.code = "Access Denied";
+                    res.message = "You cannot delete owner-less resources via the api.";
+                }
+            }else{
+                res.code = "Access Denied";
+                res.message = "You must be signed in to delete a collection.";
+            }
+            return res
         }
     }
 }
