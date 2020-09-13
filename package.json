@@ -23,7 +23,8 @@
     "fuse.js": "^6.4.1",
     "quick-score": "0.0.9",
     "three": "^0.116.0",
-    "vue": "^2.6.11"
+    "vue": "^2.6.11",
+    "node-fetch": "^2.6.1"
   },
   "devDependencies": {
     "@types/dat.gui": "^0.7.5",
