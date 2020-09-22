@@ -50,6 +50,22 @@ const typeDefs = gql`
             modelPath: String,
             defaultZoom: Float,
             children: [MapItemInput!]
+        ): MapItemMutationResponse,
+        
+        createMapItem(
+            collectionId: ID!,
+            name: String!,
+            objectInfo: [ObjectParameterInput!],
+            pos: Vector3Input!,
+            rot: Vector3Input,
+            scale: Float!,
+            modelPath: String,
+            defaultZoom: Float,
+            children: [MapItemInput!]
+        ): MapItemMutationResponse,
+        
+        deleteMapItem(
+            objectRef: MapItemInput!
         ): MapItemMutationResponse
     }
 
@@ -228,8 +244,8 @@ const resolvers = {
                                 res.collection = dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
                                 return res
                             } else {
-                                let res = await existingCollectionRef.update(updateObject);
-                                if (res) {
+                                let updateRes = await existingCollectionRef.update(updateObject);
+                                if (updateRes) {
                                     res.code = "Success";
                                     res.success = true;
                                     res.message = "The changes have been applied.";
@@ -318,7 +334,7 @@ const resolvers = {
                         } else {
                             res.code = "Null Response";
                             res.success = false;
-                            res.message = "The database returned a null response. The collection may have been deleted successfully, but you should attempt to retrieve it to verify this.";
+                            res.message = "The database returned a null response. The collection may have still been deleted successfully, but you should attempt to retrieve it to verify this.";
                         }
                     } else {
                         res.code = "Access Denied";
@@ -419,7 +435,7 @@ const resolvers = {
                                 if(await args.children.every(async(childRef)=>{
                                     let childCollectionRef = db.collection('mapCollections').doc(childRef.collectionId)
                                     let childCollection = await childCollectionRef.get();
-                                    if (!childCollection.exists()){
+                                    if (!childCollection.exists){
                                         return false;
                                     }
                                     let childMapItemIds = childCollection.data().mapItems.map(mapItem => mapItem.objectId);
@@ -440,8 +456,8 @@ const resolvers = {
                                     res.collection = dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
                                     return res
                                 } else {
-                                    let res = await existingCollectionRef.update({mapItems: existingMapItems});
-                                    if (res) {
+                                    let updateRes = await existingCollectionRef.update({mapItems: existingMapItems});
+                                    if (updateRes) {
                                         res.code = "Success";
                                         res.success = true;
                                         res.message = "The changes have been applied.";
@@ -474,6 +490,200 @@ const resolvers = {
                 res.message = "You cannot modify owner-less resources via the api.";
             }
             return res;
+        },
+        createMapItem: async (parent, args, context, info) => {
+            let res = {
+                code: "Unspecified Failure",
+                success: false,
+                message: "The mutation resolver completed the request without modifying the response. This should never happen. Please contact BenCo or another lead developer!",
+                collection: null
+            }
+            let existingCollectionRef = db.collection('mapCollections').doc(args.collectionId)
+            let existingCollection = await existingCollectionRef.get();
+            let newMapItem = {
+                name: "No name specified.",
+                objectInfo: [],
+                pos: {x: 0, y: 0, z: 0},
+                rot: {x: 0, y: 0, z: 0},
+                scale: 1,
+                modelPath: "",
+                defaultZoom: 50,
+                children: [],
+                objectId: uuid.v4()
+            };
+            if (!existingCollection.exists) {
+                res.code = "Collection Not Found";
+                res.message = "There were no collections found in the database at this id. Did you make sure you used a valid id? You may need to create a collection to insert items into before creating map items.";
+            } else if (existingCollection.data().owner !== "") {
+                if (context.req.user) {
+                    // Valid authentication.
+                    let properties = Object.keys(args);
+                    if (properties.includes("name")) {
+                        if (args.name.trim() !== "") {
+                            newMapItem.name = args.name;
+                        } else {
+                            res.code = "Invalid Argument";
+                            res.message = "You have supplied a name that does not contain any non-whitespace characters. The query has been terminated to prevent excessively stupid map item names.";
+                            return res;
+                        }
+                    }
+                    if (properties.includes("objectInfo")) {
+                        if(args.objectInfo.every(objectProperty => objectProperty.parameter.trim() !== "" && objectProperty.value.trim() !== "")){
+                            newMapItem.objectInfo = args.objectInfo.map(objectInfo=>{return {parameter:objectInfo.parameter, value:objectInfo.value}});
+                        }else{
+                            res.code = "Invalid Argument";
+                            res.message = "One or more objectInfo properties or values do not contain any non-whitespace characters. The query has been terminated to prevent excessively stupid map item names.";
+                            return res;
+                        }
+                    }else{
+                        args.objectInfo = []
+                    }
+                    if (properties.includes("pos")){
+                        newMapItem.pos = {x:args.pos.x, y:args.pos.y, z:args.pos.z};
+                    }
+                    if (properties.includes("rot")) {
+                        newMapItem.rot = {x:args.rot.x, y:args.rot.y, z:args.rot.z};
+                    }
+                    if (properties.includes("scale")) {
+                        if (args.scale > 0) {
+                            newMapItem.scale = args.scale;
+                        } else {
+                            res.code = "Invalid Argument";
+                            res.message = "The provided scale was less than or equal to zero. Here at Atlas, we like our objects large enough to exist, so we're kindly asking you to please not.";
+                            return res;
+                        }
+                    }
+                    if (properties.includes("defaultZoom")) {
+                        if (args.defaultZoom > 0) {
+                            newMapItem.defaultZoom = args.defaultZoom;
+                        } else {
+                            res.code = "Invalid Argument";
+                            res.message = "The provided default zoom was less than or equal to zero. Here at Atlas, we like to look at objects from further than *literally being in the exact same position as them* away, so kindly give a default zoom above zero.";
+                            return res;
+                        }
+                    }
+                    if (properties.includes("modelPath")) {
+                        let modelPath = `MR/models/${args.modelPath}/model.glb`;
+                        let file = bucket.file(modelPath);
+                        let fileExists = (await file.exists())[0];
+                        if(fileExists){
+                            // Valid model
+                            newMapItem.modelPath = args.modelPath;
+                        }else{
+                            res.code = "Invalid Argument";
+                            res.message = "The model path you provided does not match any known object in the observable universe. Or at least, it doesn't match anything on our server.";
+                            return res;
+                        }
+                    }
+                    if (properties.includes("children")){
+                        if(await args.children.every(async(childRef)=>{
+                            let childCollectionRef = db.collection('mapCollections').doc(childRef.collectionId)
+                            let childCollection = await childCollectionRef.get();
+                            if (!childCollection.exists){
+                                return false;
+                            }
+                            let childMapItemIds = childCollection.data().mapItems.map(mapItem => mapItem.objectId);
+                            return childMapItemIds.includes(childRef.objectId);
+                        })){
+                            newMapItem.children = args.children.map(childRef=>{return {collectionId:childRef.collectionId, objectId:childRef.objectId}});
+                        } else {
+                            res.code = "Invalid Argument";
+                            res.message = "One of the children provided, or the collection they are in do not exist in our database. Mysterious...";
+                            return res;
+                        }
+                    }
+                    let existingMapItems = existingCollection.data().mapItems;
+                    existingMapItems.push(newMapItem);
+                    let updateRes = await existingCollectionRef.update({mapItems: existingMapItems});
+                    if (updateRes) {
+                        res.code = "Success";
+                        res.success = true;
+                        res.message = "The new Map Item has been created.";
+                        res.mapItem = dataFormatters.firebaseToQuery.mapItem(newMapItem, existingCollection.id, existingCollection.data().owner);
+                        return res
+                    }
+                } else {
+                    res.code = "Access Denied";
+                    res.message = "You are not signed in to a valid Atlas user account. Please ensure you have used a valid and current auth token.";
+                }
+            } else {
+                res.code = "Access Denied";
+                res.message = "You cannot modify owner-less resources via the api.";
+            }
+            return res;
+            if (context.req.user) {
+                let collectionObject = {};
+                collectionObject.owner = context.req.user.uid;
+                if (args.name.trim() === "") {
+                    res.code = "Invalid Argument";
+                    res.message = "You have supplied a name that does not contain any non-whitespace characters. The query has been terminated to prevent excessively stupid collection names.";
+                    return res;
+                }
+                collectionObject.collectionName = args.name;
+                collectionObject.visibility = "Private";
+                collectionObject.mapItems = [];
+                const docRef = await db.collection('mapCollections').add(collectionObject);
+                const doc = await docRef.get();
+                let data = doc.data();
+                res.collection = dataFormatters.firebaseToQuery.collection(data, doc.id);
+                res.code = "Success";
+                res.success = true;
+                res.message = "The collection has been created.";
+            } else {
+                res.code = "Access Denied";
+                res.message = "You must be signed in to create a collection.";
+            }
+            return res
+        },
+        deleteMapItem: async (parent, args, context, info) => {
+            let res = {
+                code: "Unspecified Failure",
+                success: false,
+                message: "The mutation resolver completed the request without modifying the response. This should never happen. Please contact BenCo or another lead developer!",
+                collection: null
+            }
+            if (context.req.user) {
+                let existingCollectionRef = db.collection('mapCollections').doc(args.objectRef.collectionId)
+                let existingCollection = await existingCollectionRef.get();
+                if (!existingCollection.exists) {
+                    res.code = "Collection Not Found";
+                    res.message = "There were no collections found in the database at this id. Did you make sure you used a valid id?";
+                    return res;
+                } else if (existingCollection.data().owner !== "") {
+                    if (existingCollection.data().owner === context.req.user.uid) {
+                        // Correct user
+                        let existingMapItems = existingCollection.data().mapItems;
+                        if (!existingMapItems.some(mapItem=>mapItem.objectId === args.objectRef.objectId)){
+                            res.code = "Map Item Not Found";
+                            res.message = "There were no map items found in the collection at this id. Did you make sure you used a valid id?";
+                            return res;
+                        }
+                        existingMapItems = existingMapItems.filter(mapItem => mapItem.objectId !== args.objectRef.objectId);
+                        let deleteRes = await existingCollectionRef.update({mapItems: existingMapItems});
+                        if (deleteRes) {
+                            res.code = "Success";
+                            res.success = true;
+                            res.message = "The Map Item has been deleted.";
+                            res.mapItem = null;
+                            return res
+                        } else {
+                            res.code = "Null Response";
+                            res.success = false;
+                            res.message = "The database returned a null response. The map item may have still been deleted successfully, but you should attempt to retrieve it to verify this.";
+                        }
+                    } else {
+                        res.code = "Access Denied";
+                        res.message = "You cannot delete from a collection that is owned by someone else.";
+                    }
+                } else {
+                    res.code = "Access Denied";
+                    res.message = "You cannot delete owner-less resources via the api.";
+                }
+            } else {
+                res.code = "Access Denied";
+                res.message = "You must be signed in to delete a collection.";
+            }
+            return res
         }
     }
 }
