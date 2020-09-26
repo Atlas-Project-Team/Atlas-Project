@@ -5,11 +5,15 @@ const CopyPlugin = require('copy-webpack-plugin');
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 const VueLoaderPlugin = require('vue-loader/lib/plugin');
 const { VuetifyLoaderPlugin } = require('vuetify-loader')
+const nodeExternals = require('webpack-node-externals');
 
 module.exports = {
+    target: 'web',
+    //externals: [nodeExternals()],
     entry: {
         main: './src/index.ts',
-        auth: './src/auth.ts'
+        auth: './src/auth.ts',
+        test: './src/newIndex.ts'
 
     },
     module: {
@@ -19,11 +23,16 @@ module.exports = {
                 loader: 'url-loader'
             },
             {
-                test: /\.(tsx|ts)$/,
-                include: [
-                    path.resolve(__dirname, 'src/index.ts'),
-                    path.resolve(__dirname, 'src/auth.ts'),
+                test: /\.vue$/,
+                use: [
+                    'vue-loader',
                 ],
+                include: [
+                    path.resolve(__dirname, 'src/components/objects.vue')
+                ]
+            },
+            {
+                test: /\.(tsx|ts)$/,
                 use: [
                     {
                         loader: 'ts-loader',
@@ -36,6 +45,7 @@ module.exports = {
             {
                 test: /\.css$/,
                 use: [
+                    'vue-style-loader',
                     'style-loader',
                     'css-loader',
                 ],
@@ -57,16 +67,10 @@ module.exports = {
                     },
                 ],
             },
-            {
-                test: /\.vue$/,
-                use: [
-                    'vue-loader',
-                ]
-            },
         ],
     },
     resolve: {
-        extensions: ['.tsx', '.ts', '.js'],
+        extensions: ['.tsx', '.ts', '.js', '.vue'],
         alias: {
             'vue$': 'vue/dist/vue.esm.js'
         },
@@ -96,6 +100,13 @@ module.exports = {
         new HtmlWebpackPlugin({
             template: path.resolve(__dirname, "src", "auth.html"),
             filename: "auth.html",
+            cache: false,
+            inject: false
+        }),
+        new HtmlWebpackPlugin({
+            template: path.resolve(__dirname, "src", "newIndex.html"),
+            filename: "newIndex.html",
+            cache: false,
             inject: false
         }),
         new HtmlWebpackPlugin({

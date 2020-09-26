@@ -99,11 +99,10 @@
     </v-container>
 </template>
 
-<script lang="js">
+<script>
     import Fuse from "fuse.js";
     import Vue from "vue";
     import _ from "lodash";
-    import {parameters} from "../../../.storybook/preview";
 
     export default {
         name: "objects.small",
@@ -112,11 +111,6 @@
                 type: Array,
                 required: true,
                 default: () => ([])
-            },
-            user: {
-                type: Object,
-                required: true,
-                default: () => ({})
             }
         },
         data() {

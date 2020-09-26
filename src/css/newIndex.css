@@ -1,0 +1,44 @@
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    width: 100%;
+    height: 100%;
+}
+
+#root {
+    width: 100vw;
+    height: 100vh;
+}
+
+.item {
+    box-sizing: border-box;
+}
+
+.item, .gutter.gutter-horizontal {
+    float: left;
+    height: 100%;
+}
+
+.vertical, .gutter-vertical {
+    width: 100%;
+    float: left
+}
+
+
+.gutter {
+    background-color: #eee;
+
+    background-repeat: no-repeat;
+    background-position: 50%;
+}
+
+.gutter.gutter-horizontal {
+    cursor: col-resize;
+}
+
+.gutter.gutter-vertical {
+    cursor: row-resize;
+}

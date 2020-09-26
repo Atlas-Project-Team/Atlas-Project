@@ -1,4 +1,4 @@
-import SmallObjects from '../src/components/objects/objects.vue';
+import SmallObjects from '../src/components/objects.vue';
 import client from '../src/apolloClient';
 import {gql} from "@apollo/client";
 
