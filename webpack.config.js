@@ -5,7 +5,6 @@ const CopyPlugin = require('copy-webpack-plugin');
 const {CleanWebpackPlugin} = require('clean-webpack-plugin');
 const VueLoaderPlugin = require('vue-loader/lib/plugin');
 const { VuetifyLoaderPlugin } = require('vuetify-loader')
-const nodeExternals = require('webpack-node-externals');
 
 module.exports = {
     target: 'web',
@@ -28,7 +27,9 @@ module.exports = {
                     'vue-loader',
                 ],
                 include: [
-                    path.resolve(__dirname, 'src/components/objects.vue')
+                    path.resolve(__dirname, 'src/components/Objects.vue'),
+                    path.resolve(__dirname, 'src/components/EmptySlot.vue'),
+                    path.resolve(__dirname, 'src/App.vue')
                 ]
             },
             {
