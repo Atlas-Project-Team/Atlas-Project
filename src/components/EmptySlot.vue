@@ -1,17 +1,21 @@
 <template>
-  <div class="container" style="display: flex; flex-direction: column;">
-    <div style="flex-grow: 4; display: flex; justify-content: center">
-      <div style="display: flex; flex-direction: column; justify-content: center">
-        <select style="padding: 10px">
-          <option>Test</option>
-        </select>
-        <button style="padding: 10px" v-on:click="replaceWithComponent()">Select</button>
-      </div>
-    </div>
-    <div style="display: flex; flex-basis: 100px; align-items: stretch">
-      <button style="flex-grow: 1" v-on:click="splitH()">Split Horizontal</button>
-      <button style="flex-grow: 1" v-on:click="splitV()">Split Vertical</button>
-    </div>
+  <div class="layout-container">
+    <v-container fill-height>
+      <v-row justify="center">
+          <v-card dark>
+            <v-card-title>
+              Atlas Map App
+            </v-card-title>
+            <v-select v-model="selectedComponent" :items="Object.keys(availableComponents)" outlined style="padding: 10px" placeholder="Select a component">
+            </v-select>
+            <v-card-actions>
+              <v-btn style="padding: 10px" :disabled="!selectedComponent" v-on:click="replaceWithComponent()">Select</v-btn>
+              <v-btn v-on:click="splitH()">Split Horizontal</v-btn>
+              <v-btn v-on:click="splitV()">Split Vertical</v-btn>
+            </v-card-actions>
+          </v-card>
+      </v-row>
+    </v-container>
   </div>
 </template>
 
@@ -21,17 +25,27 @@ import Vue from "vue";
 import Split from "split.js";
 import Objects from "./Objects.vue";
 import EmptySlot from "./EmptySlot.vue";
+import vuetify from '../plugins/vuetify';
 
 export default {
   name: "EmptySlot",
+  vuetify,
   components: {
     EmptySlot,
     Objects
   },
+  data () {
+    return {
+      availableComponents: {
+        Objects
+      },
+      selectedComponent: null
+    }
+  },
   methods: {
     splitH: function () {
       let newEl = document.createElement('div');
-      newEl.classList.add('container');
+      newEl.classList.add('layout-container');
 
       let left = document.createElement('div');
       left.classList.add('item');
@@ -52,7 +66,7 @@ export default {
       let splitConstructor = Vue.extend(EmptySlot);
       Split([left, right], {
         direction: "horizontal",
-        gutterSize: 10
+        gutterSize: 5
       });
 
       new splitConstructor().$mount('split-buttons');
@@ -60,7 +74,7 @@ export default {
     },
     splitV: function () {
       let newEl = document.createElement('div');
-      newEl.classList.add('container');
+      newEl.classList.add('layout-container');
 
       let top = document.createElement('div');
       top.classList.add('item');
@@ -81,7 +95,7 @@ export default {
       let splitConstructor = Vue.extend(EmptySlot);
       Split([top, bottom], {
         direction: "vertical",
-        gutterSize: 10
+        gutterSize: 5
       });
 
       new splitConstructor().$mount('split-buttons');

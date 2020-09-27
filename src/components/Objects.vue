@@ -103,9 +103,11 @@
     import Fuse from "fuse.js";
     import Vue from "vue";
     import _ from "lodash";
+    import vuetify from '../plugins/vuetify';
 
     export default {
         name: "objects.small",
+        vuetify,
         props: {
             mapData: {
                 type: Array,
