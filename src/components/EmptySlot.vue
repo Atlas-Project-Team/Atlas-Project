@@ -1,26 +1,54 @@
 <template>
-  <div class="layout-container">
+  <div class="layout-container" v-if="state===''">
     <v-container fill-height>
       <v-row justify="center">
-          <v-card dark>
+          <v-card>
             <v-card-title>
               Atlas Map App
             </v-card-title>
             <v-select v-model="selectedComponent" :items="Object.keys(availableComponents)" outlined style="padding: 10px" placeholder="Select a component">
             </v-select>
             <v-card-actions>
-              <v-btn style="padding: 10px" :disabled="!selectedComponent" v-on:click="replaceWithComponent()">Select</v-btn>
-              <v-btn v-on:click="splitH()">Split Horizontal</v-btn>
-              <v-btn v-on:click="splitV()">Split Vertical</v-btn>
+              <v-btn style="padding: 10px" :disabled="!selectedComponent" v-on:click="updateState('replace')">Select</v-btn>
+              <v-btn v-on:click="updateState('splitH')">Split Horizontal</v-btn>
+              <v-btn v-on:click="updateState('splitV')">Split Vertical</v-btn>
+              <v-btn v-if="child" v-on:click="merge()">Merge</v-btn>
             </v-card-actions>
           </v-card>
       </v-row>
     </v-container>
   </div>
+  <div class="layout-container" v-else-if="state==='splitH'">
+    <div class="item horizontal" id="unbound-left">
+      <empty-slot :child="true" @merge="split.destroy();state=''"></empty-slot>
+    </div>
+    <div class="item horizontal" id="unbound-right">
+      <empty-slot :child="true" @merge="split.destroy();state=''"></empty-slot>
+    </div>
+  </div>
+  <div class="layout-container" v-else-if="state==='splitV'">
+    <div class="item vertical" id="unbound-top">
+      <empty-slot :child="true" @merge="split.destroy();state=''"></empty-slot>
+    </div>
+    <div class="item vertical" id="unbound-bottom">
+      <empty-slot :child="true" @merge="split.destroy();state=''"></empty-slot>
+    </div>
+  </div>
+  <div v-else-if="state==='replace'">
+    <v-toolbar dense flat>
+      <v-toolbar-title>{{selectedComponent}}</v-toolbar-title>
+      <v-spacer></v-spacer>
+      <v-btn icon @click="state='';selectedComponent=''">
+        <v-icon>
+          mdi-close
+        </v-icon>
+      </v-btn>
+    </v-toolbar>
+    <component :is="selectedComponent"></component>
+  </div>
 </template>
 
 <script>
-const sampleData=[{objectId:0,pos:{x:0,y:0,z:0},modelPath:"Assets/models/Neptune/",objectInfo:[{parameter:"Object",value:"Planet"},{parameter:"Type",value:"Gas Giant"}],scale:10,name:"Eos",defaultZoom:2e4,owner:""},{scale:1,name:"Eos 222",objectId:1,pos:{x:15,y:0,z:0},modelPath:"Assets/models/Station/",objectInfo:[{parameter:"Object",value:"Station"},{parameter:"Type",value:"Neutral"}],defaultZoom:500,owner:""}];
 import Vue from "vue";
 import Split from "split.js";
 import Objects from "./Objects.vue";
@@ -34,88 +62,53 @@ export default {
     EmptySlot,
     Objects
   },
+  props: {
+    child: {
+      type: Boolean,
+      required: false,
+      default: () => false
+    }
+  },
   data () {
     return {
+      state: '',
+      replacedObject: '',
       availableComponents: {
-        Objects
+        "Objects": Objects
       },
-      selectedComponent: null
+      selectedComponent: null,
+      split: undefined
     }
   },
   methods: {
-    splitH: function () {
-      let newEl = document.createElement('div');
-      newEl.classList.add('layout-container');
-
-      let left = document.createElement('div');
-      left.classList.add('item');
-      left.classList.add('horizontal');
-      let leftItem = document.createElement('split-buttons');
-      left.appendChild(leftItem);
-
-      let right = document.createElement('div');
-      right.classList.add('item');
-      right.classList.add('horizontal');
-      let rightItem = document.createElement('split-buttons');
-      right.appendChild(rightItem);
-
-      newEl.appendChild(left);
-      newEl.appendChild(right);
-
-      this.$el.replaceWith(newEl);
-      let splitConstructor = Vue.extend(EmptySlot);
-      Split([left, right], {
-        direction: "horizontal",
-        gutterSize: 5
-      });
-
-      new splitConstructor().$mount('split-buttons');
-      new splitConstructor().$mount('split-buttons');
+    merge: function(){
+      this.$emit('merge');
     },
-    splitV: function () {
-      let newEl = document.createElement('div');
-      newEl.classList.add('layout-container');
-
-      let top = document.createElement('div');
-      top.classList.add('item');
-      top.classList.add('vertical');
-      let topItem = document.createElement('split-buttons');
-      top.appendChild(topItem);
-
-      let bottom = document.createElement('div');
-      bottom.classList.add('item');
-      bottom.classList.add('vertical');
-      let bottomItem = document.createElement('split-buttons');
-      bottom.appendChild(bottomItem);
-
-      newEl.appendChild(top);
-      newEl.appendChild(bottom);
-
-      this.$el.replaceWith(newEl);
-      let splitConstructor = Vue.extend(EmptySlot);
-      Split([top, bottom], {
-        direction: "vertical",
-        gutterSize: 5
-      });
-
-      new splitConstructor().$mount('split-buttons');
-      new splitConstructor().$mount('split-buttons');
-    },
-    replaceWithComponent: function() {
-      let newEl = document.createElement('objects');
-
-      let componentConstructor = Vue.extend(Objects);
-      let instance = new componentConstructor({
-        propsData: {
-          mapData: sampleData
+    updateState: function(newState) {
+      this.state=newState;
+      this.$nextTick(()=>{
+        if(newState === 'splitH') {
+          let left = document.getElementById('unbound-left');
+          let right = document.getElementById('unbound-right');
+          left.removeAttribute('id');
+          right.removeAttribute('id');
+          this.split = Split([left, right], {
+            direction: "horizontal",
+            gutterSize: 5
+          });
+        } else if(newState === 'splitV') {
+          let top = document.getElementById('unbound-top');
+          let bottom = document.getElementById('unbound-bottom');
+          top.removeAttribute('id');
+          bottom.removeAttribute('id');
+          this.split = Split([top, bottom], {
+            direction: "vertical",
+            gutterSize: 5
+          });
         }
-      });
-
-      instance.$mount();
-
-      this.$el.replaceWith(instance.$el);
-    }
-  }
+      })
+    },
+  },
 }
 </script>
 

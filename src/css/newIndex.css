@@ -44,7 +44,3 @@ body {
 .gutter.gutter-vertical {
     cursor: row-resize;
 }
-
-* {
-    color: whitesmoke;
-}

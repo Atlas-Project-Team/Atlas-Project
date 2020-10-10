@@ -1,0 +1,14 @@
+{
+  "name": "Atlas GraphQL Schema",
+  "extensions": {
+    "endpoints": {
+      "Default GraphQL Endpoint": {
+        "url": "https://sbatlasproject.com/api",
+        "headers": {
+          "user-agent": "JS GraphQL"
+        },
+        "introspect": false
+      }
+    }
+  }
+}
