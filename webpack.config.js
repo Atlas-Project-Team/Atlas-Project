@@ -27,7 +27,8 @@ module.exports = {
                     'vue-loader',
                 ],
                 include: [
-                    path.resolve(__dirname, 'src/components/Objects.vue'),
+                    path.resolve(__dirname, 'src/components/Login.vue'),
+                    path.resolve(__dirname, 'src/components/Objects.vue'),                    
                     path.resolve(__dirname, 'src/components/EmptySlot.vue'),
                     path.resolve(__dirname, 'src/App.vue')
                 ]

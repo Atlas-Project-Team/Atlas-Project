@@ -51,6 +51,7 @@
 <script>
 import Vue from "vue";
 import Split from "split.js";
+import Login from "./Login.vue";
 import Objects from "./Objects.vue";
 import EmptySlot from "./EmptySlot.vue";
 import vuetify from '../plugins/vuetify';
@@ -60,7 +61,8 @@ export default {
   vuetify,
   components: {
     EmptySlot,
-    Objects
+    Objects,
+    Login
   },
   props: {
     child: {
@@ -74,7 +76,8 @@ export default {
       state: '',
       replacedObject: '',
       availableComponents: {
-        "Objects": Objects
+        "Login": Login,
+        "Objects": Objects        
       },
       selectedComponent: null,
       split: undefined
