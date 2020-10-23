@@ -16,18 +16,9 @@
 </template>
 
 <script>
-import vue from 'vue'
-import vuetify from '../plugins/vuetify'
-import firebase from 'firebase/app'
-import 'firebase/analytics'
-import 'firebase/auth'
-import '../css/auth.css'
-
-
-// @ts-ignore
-import DiscordIcon from '../img/Discord_Icon.png'
-// @ts-ignore
-import DiscordLogo from '../img/Discord_Logo_Word.png'
+import firebase from 'firebase/app';
+import 'firebase/analytics';
+import 'firebase/auth';
 
 const firebaseConfig = {
     apiKey: "AIzaSyButkqFXtrI90FUM-l7O-nWz-3TxIwd_0U",
@@ -42,12 +33,6 @@ const firebaseConfig = {
 
 firebase.initializeApp(firebaseConfig)
 firebase.analytics()
-
-firebase.auth().onAuthStateChanged(function (user) {
-    if (user) {
-        window.location.href = "../../dist/newIndex.html";
-    }
-})
 
 
 export default {

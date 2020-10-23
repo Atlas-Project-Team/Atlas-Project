@@ -9,40 +9,27 @@
 <script>
 import EmptySlot from "./components/EmptySlot.vue";
 import gql from 'graphql-tag';
-import {computed} from '@vue/composition-api';
-
+import firebase from 'firebase/app';
+import 'firebase/analytics';
+import 'firebase/auth';
 
 export default {
   name: 'App',
   components: {
     EmptySlot
   },
-  provide() {
-    return {
-      mapDataProvider: computed(() => this.mapDataProvider)
-    }
-  },
-  apollo: {
-    mapDataProvider: gql`query {
-      mapDataProvider: getMapData {
-        name,
-        objectId,
-        pos {x,y,z},
-        modelPath,
-        objectInfo {
-            parameter,
-            value
-        },
-        scale,
-        defaultZoom,
-        owner,
-      }
-    }`,
-  },
-  data() {
-    return {
-      mapDataProvider: ''
-    }
+  mounted() {
+    console.log('mounted');
+    this.$store.dispatch('refreshMapData');
+
+    window.firebase = firebase;
+
+    firebase.auth().onAuthStateChanged(async (user)=>{
+      console.log({user});
+      let token = await firebase.auth().currentUser.getIdToken(true)
+      this.$store.commit('setUserToken', token)
+      await this.$store.dispatch('refreshMapData');
+    });
   },
   computed: {
     theme() {
