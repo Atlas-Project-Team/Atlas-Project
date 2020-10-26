@@ -1,5 +1,5 @@
 <template>
-  <v-container fluid>
+  <v-container fluid :id="(this._uid).toString()">
     <v-text-field
         v-model="searchQuery"
         dense
@@ -40,6 +40,24 @@
     </v-row>
     <v-row style="color: white">
       <v-col cols="12" order="2" order-sm="1" sm="6">
+        <v-row style="margin-left:0"> <!-- html is fucking weird -->
+          <v-dialog v-model="createDialog">
+            <template v-slot:activator="{on, attrs}">
+              <v-btn @click.stop="openCreateForm">Create Object</v-btn>
+            </template>
+            <v-card>
+              <v-card-title>Create Object</v-card-title>
+              <v-card-text>
+                <v-form>
+                  <v-select></v-select>
+                </v-form>
+              </v-card-text>
+              <v-card-actions>
+                <v-btn>Save</v-btn>
+              </v-card-actions>
+            </v-card>
+          </v-dialog>
+        </v-row>
         <v-list dense flat style="background-color: #343a40">
           <v-list-item-group
               v-model="currentlySelected"
@@ -109,19 +127,20 @@ import vuetify from '../plugins/vuetify';
 export default {
   name: "objects.small",
   vuetify,
-  inject: ['mapDataProvider'],
   data() {
     return {
       searchQuery: "",
       currentFilter: "Filter",
       currentFilterValue: "Value",
       currentFilters: [],
-      currentlySelected: undefined
+      currentlySelected: undefined,
+      createDialog: false,
+      newObject: {}
     }
   },
   computed: {
     mapData: function () {
-      return this.mapDataProvider.value
+      return this.$store.state.mapData;
     },
     currentItem: function () {
       return this.mapData[this.currentlySelected];
@@ -186,6 +205,27 @@ export default {
         }
       }
       return true
+    },
+    openCreateForm: function() {
+      this.createDialog = true;
+      this.newObject = {
+        collectionId: "",
+        name: "",
+        objectInfo: [],
+        pos: {
+          x: 0,
+          y: 0,
+          z: 0
+        },
+        rot: {
+          x: 0,
+          y: 0,
+          z: 0
+        },
+        modelPath: "",
+        defaultZoom: 0,
+        children: []
+      }
     }
   },
   watchers: {
