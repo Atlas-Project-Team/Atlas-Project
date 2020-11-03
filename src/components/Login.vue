@@ -31,8 +31,8 @@ const firebaseConfig = {
     measurementId: "G-40XQC6G6E4"
 }
 
-firebase.initializeApp(firebaseConfig)
-firebase.analytics()
+firebase.initializeApp(firebaseConfig);
+firebase.analytics();
 
 
 export default {

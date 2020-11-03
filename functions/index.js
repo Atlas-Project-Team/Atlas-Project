@@ -2,7 +2,7 @@ const functions = require('firebase-functions');
 const cookieParser = require('cookie-parser');
 const crypto = require("crypto");
 const admin = require('firebase-admin');
-const {error} = require("firebase-functions/lib/logger");
+
 const serviceAccount = require('./service-account.json');
 const {oAuthConfig} = require('./info');
 const fetch = require('node-fetch');
@@ -31,15 +31,15 @@ const typeDefs = gql`
             name: String,
             owner: ID
         ): CollectionMutationResponse,
-        
+
         createCollection(
             name: String!
         ): CollectionMutationResponse,
-        
+
         deleteCollection(
             id: ID!
         ): CollectionMutationResponse,
-        
+
         updateMapItem(
             objectRef: MapItemInput!,
             name: String,
@@ -51,7 +51,7 @@ const typeDefs = gql`
             defaultZoom: Float,
             children: [MapItemInput!]
         ): MapItemMutationResponse,
-        
+
         createMapItem(
             collectionId: ID!,
             name: String!,
@@ -63,7 +63,7 @@ const typeDefs = gql`
             defaultZoom: Float,
             children: [MapItemInput!]
         ): MapItemMutationResponse,
-        
+
         deleteMapItem(
             objectRef: MapItemInput!
         ): MapItemMutationResponse
@@ -106,6 +106,7 @@ const typeDefs = gql`
         name: String!,
         objectInfo: [ObjectParameter!]!,
         owner: String!,
+        ownerUsername: String!,
         pos: Vector3!,
         rot: Vector3,
         scale: Float,
@@ -117,6 +118,7 @@ const typeDefs = gql`
         name: String!,
         mapItems: [MapItem!]!,
         owner: ID!,
+        ownerUsername: String!,        
         visibility: String,
         id: ID!
     }
@@ -146,43 +148,65 @@ const typeDefs = gql`
 
 const dataFormatters = {
     firebaseToQuery: {
-        collection: function (data, id) {
+        collection: async function (data, id) {
             data.name = data.collectionName;
             data.id = id;
-            data.mapItems.map((mapItem, index) => dataFormatters.firebaseToQuery.mapItem(mapItem, id, data.owner));
+            data.ownerUsername = "";
+            if(data.owner) {
+                let user = await admin.auth().getUser(data.owner);
+                if (user) {
+                    data.ownerUsername = user.displayName;
+                }
+            }
+            data.mapItems = data.mapItems.map((mapItem) => {
+                return dataFormatters.firebaseToQuery.mapItem(mapItem, id, data.owner, data.ownerUsername);
+            });
             return data;
         },
-        mapItem: function (mapItem, collectionId, collectionOwner) {
+        mapItem: function (mapItem, collectionId, collectionOwner, collectionOwnerUsername) {
             mapItem.collection = collectionId;
             mapItem.owner = collectionOwner;
+            mapItem.ownerUsername = collectionOwnerUsername;
             return mapItem;
         }
     }
 }
 
+// noinspection JSUnusedGlobalSymbols
 const resolvers = {
     Query: {
-        getCollections: async (parent, args, context, info) => {
+        getCollections: async (parent, args, context) => {
             let collections = [];
             let querySnapshot = await db.collection("mapCollections").where("owner", "in", (context.req.user ? ['', context.req.user.uid] : [''])).get()
-            querySnapshot.forEach((doc) => {
+            let processRecord = async (doc) => {
                 let data = doc.data();
-                collections.push(dataFormatters.firebaseToQuery.collection(data, doc.id));
+                let collection = await dataFormatters.firebaseToQuery.collection(data, doc.id);
+                collections.push(collection);
+            };
+            let queryPromises = []
+            querySnapshot.forEach(doc => {
+                queryPromises.push(processRecord(doc))
             });
+            await Promise.all(queryPromises);
             return collections;
         },
-        getMapData: async (parent, args, context, info) => {
+        getMapData: async (parent, args, context) => {
             let mapData = [];
-            let querySnapshot = await db.collection("mapCollections").where("owner", "in", (context.req.user ? ['', context.req.user.uid] : [''])).get()
-            querySnapshot.forEach((doc) => {
+            let querySnapshot = await db.collection("mapCollections").where("owner", "in", (context.req.user ? ['', context.req.user.uid] : [''])).get();
+            const processRecord = async (doc) => {
                 let data = doc.data();
-                data.mapItems.map((mapItem, index) => dataFormatters.firebaseToQuery.mapItem(mapItem, doc.id, data.owner));
+                data.mapItems = data.mapItems.map((mapItem) => dataFormatters.firebaseToQuery.mapItem(mapItem, doc.id, data.owner));
+                data.mapItems = await Promise.all(data.mapItems);
                 mapData.push(...data.mapItems);
+            }
+            let queryPromises = []
+            querySnapshot.forEach(doc => {
+                queryPromises.push(processRecord(doc))
             });
+            await Promise.all(queryPromises);
             return mapData;
         },
-        getUserName: async (parent, args, context, info) => {
-            console.log(context.req.user);
+        getUserName: async (parent, args, context) => {
             if (args.uid) {
                 let user = await admin.auth().getUser(args.uid);
                 if (user) {
@@ -198,7 +222,7 @@ const resolvers = {
         }
     },
     Mutation: {
-        updateCollection: async (parent, args, context, info) => {
+        updateCollection: async (parent, args, context) => {
             let res = {
                 code: "Unspecified Failure",
                 success: false,
@@ -241,7 +265,7 @@ const resolvers = {
                                 res.code = "No Changes.";
                                 res.success = true;
                                 res.message = "The changes have already been applied. No operation occurred.";
-                                res.collection = dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
+                                res.collection = await dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
                                 return res
                             } else {
                                 let updateRes = await existingCollectionRef.update(updateObject);
@@ -249,7 +273,7 @@ const resolvers = {
                                     res.code = "Success";
                                     res.success = true;
                                     res.message = "The changes have been applied.";
-                                    let result = dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
+                                    let result = await dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
                                     Object.keys(args).filter(arg => ['name', 'owner'].includes(arg)).forEach(key => {
                                         result[key] = args[key]
                                     })
@@ -261,7 +285,7 @@ const resolvers = {
                             res.code = "No Arguments";
                             res.success = true;
                             res.message = "You did not supply any arguments, as a result, nothing was changed... successfully?";
-                            res.collection = dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
+                            res.collection = await dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
                             return res
                         }
                     } else {
@@ -278,7 +302,7 @@ const resolvers = {
             }
             return res;
         },
-        createCollection: async (parent, args, context, info) => {
+        createCollection: async (parent, args, context) => {
             let res = {
                 code: "Unspecified Failure",
                 success: false,
@@ -299,7 +323,7 @@ const resolvers = {
                 const docRef = await db.collection('mapCollections').add(collectionObject);
                 const doc = await docRef.get();
                 let data = doc.data();
-                res.collection = dataFormatters.firebaseToQuery.collection(data, doc.id);
+                res.collection = await dataFormatters.firebaseToQuery.collection(data, doc.id);
                 res.code = "Success";
                 res.success = true;
                 res.message = "The collection has been created.";
@@ -309,7 +333,7 @@ const resolvers = {
             }
             return res
         },
-        deleteCollection: async (parent, args, context, info) => {
+        deleteCollection: async (parent, args, context) => {
             let res = {
                 code: "Unspecified Failure",
                 success: false,
@@ -350,13 +374,14 @@ const resolvers = {
             }
             return res
         },
-        updateMapItem: async (parent, args, context, info) => {
+        updateMapItem: async (parent, args, context) => {
             let res = {
                 code: "Unspecified Failure",
                 success: false,
                 message: "The mutation resolver completed the request without modifying the response. This should never happen. Please contact BenCo or another lead developer!",
                 mapItem: null
             }
+            // noinspection JSUnresolvedVariable
             let existingCollectionRef = db.collection('mapCollections').doc(args.objectRef.collectionId)
             let existingCollection = await existingCollectionRef.get();
             if (!existingCollection.exists) {
@@ -369,13 +394,15 @@ const resolvers = {
                         let existingMapItems = existingCollection.data().mapItems;
                         let originalMapItems = _.cloneDeep(existingMapItems); // https://www.youtube.com/watch?v=g5JYM_MSe2Y
                         let existingMapItemIds = existingMapItems.map(mapItem => mapItem.objectId);
-                        if (existingMapItemIds.includes(args.objectRef.objectId)){
+                        // noinspection JSUnresolvedVariable
+                        if (existingMapItemIds.includes(args.objectRef.objectId)) {
                             // Map Item exists.
+                            // noinspection JSUnresolvedVariable
                             let existingMapItem = existingMapItems.find(mapItem => mapItem.objectId === args.objectRef.objectId);
                             // The way this is set up requires a daily ritual to the gods of pass-by-object-ref variables so if shit goes wrong it's probably because of this.
                             // ...but this is easier and it *should* work so fuck it. I'll fix it when it's an issue.
                             let properties = Object.keys(args);
-                            properties = properties.filter(p=>p!=='objectRef');
+                            properties = properties.filter(p => p !== 'objectRef');
                             if (properties.includes("name")) {
                                 if (args.name.trim() !== "") {
                                     existingMapItem.name = args.name;
@@ -386,19 +413,26 @@ const resolvers = {
                                 }
                             }
                             if (properties.includes("objectInfo")) {
-                                if(args.objectInfo.every(objectProperty => objectProperty.parameter.trim() !== "" && objectProperty.value.trim() !== "")){
-                                    existingMapItem.objectInfo = args.objectInfo.map(objectInfo=>{return {parameter:objectInfo.parameter, value:objectInfo.value}});
-                                }else{
+                                // noinspection DuplicatedCode
+                                if (args.objectInfo.every(objectProperty => objectProperty.parameter.trim() !== "" && objectProperty.value.trim() !== "")) {
+                                    existingMapItem.objectInfo = args.objectInfo.map(objectInfo => {
+                                        return {
+                                            parameter: objectInfo.parameter,
+                                            value: objectInfo.value
+                                        }
+                                    });
+                                } else {
                                     res.code = "Invalid Argument";
                                     res.message = "One or more objectInfo properties or values do not contain any non-whitespace characters. The query has been terminated to prevent excessively stupid map item names.";
                                     return res;
                                 }
                             }
-                            if (properties.includes("pos")){
-                                existingMapItem.pos = {x:args.pos.x, y:args.pos.y, z:args.pos.z};
+                            // noinspection DuplicatedCode,DuplicatedCode
+                            if (properties.includes("pos")) {
+                                existingMapItem.pos = {x: args.pos.x, y: args.pos.y, z: args.pos.z};
                             }
                             if (properties.includes("rot")) {
-                                existingMapItem.rot = {x:args.rot.x, y:args.rot.y, z:args.rot.z};
+                                existingMapItem.rot = {x: args.rot.x, y: args.rot.y, z: args.rot.z};
                             }
                             if (properties.includes("scale")) {
                                 if (args.scale > 0) {
@@ -422,26 +456,31 @@ const resolvers = {
                                 let modelPath = `MR/models/${args.modelPath}/model.glb`;
                                 let file = bucket.file(modelPath);
                                 let fileExists = (await file.exists())[0];
-                                if(fileExists){
+                                if (fileExists) {
                                     // Valid model
                                     existingMapItem.modelPath = args.modelPath;
-                                }else{
+                                } else {
                                     res.code = "Invalid Argument";
                                     res.message = "The model path you provided does not match any known object in the observable universe. Or at least, it doesn't match anything on our server.";
                                     return res;
                                 }
                             }
-                            if (properties.includes("children")){
-                                if(await args.children.every(async(childRef)=>{
+                            if (properties.includes("children")) {
+                                if (await args.children.every(async (childRef) => {
                                     let childCollectionRef = db.collection('mapCollections').doc(childRef.collectionId)
                                     let childCollection = await childCollectionRef.get();
-                                    if (!childCollection.exists){
+                                    if (!childCollection.exists) {
                                         return false;
                                     }
                                     let childMapItemIds = childCollection.data().mapItems.map(mapItem => mapItem.objectId);
                                     return childMapItemIds.includes(childRef.objectId);
-                                })){
-                                    existingMapItem.children = args.children.map(childRef=>{return {collectionId:childRef.collectionId, objectId:childRef.objectId}});
+                                })) {
+                                    existingMapItem.children = args.children.map(childRef => {
+                                        return {
+                                            collectionId: childRef.collectionId,
+                                            objectId: childRef.objectId
+                                        }
+                                    });
                                 } else {
                                     res.code = "Invalid Argument";
                                     res.message = "One of the children provided, or the collection they are in do not exist in our database. Mysterious...";
@@ -453,7 +492,7 @@ const resolvers = {
                                     res.code = "No Changes.";
                                     res.success = true;
                                     res.message = "The changes have already been applied. No operation occurred.";
-                                    res.collection = dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
+                                    res.collection = await dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
                                     return res
                                 } else {
                                     let updateRes = await existingCollectionRef.update({mapItems: existingMapItems});
@@ -461,7 +500,7 @@ const resolvers = {
                                         res.code = "Success";
                                         res.success = true;
                                         res.message = "The changes have been applied.";
-                                        res.mapItem = dataFormatters.firebaseToQuery.mapItem(existingMapItem, existingCollection.id, existingCollection.data().owner);
+                                        res.mapItem = await dataFormatters.firebaseToQuery.mapItem(existingMapItem, existingCollection.id, existingCollection.data().owner);
                                         return res
                                     }
                                 }
@@ -469,10 +508,10 @@ const resolvers = {
                                 res.code = "No Arguments";
                                 res.success = true;
                                 res.message = "You did not supply any arguments, as a result, nothing was changed... successfully?";
-                                res.collection = dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
+                                res.collection = await dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
                                 return res
                             }
-                        }else{
+                        } else {
                             res.code = "Map Item Not Found";
                             res.message = "There were no map items found in the collection at this id. Did you make sure you used a valid id?";
                             return res;
@@ -491,7 +530,7 @@ const resolvers = {
             }
             return res;
         },
-        createMapItem: async (parent, args, context, info) => {
+        createMapItem: async (parent, args, context) => {
             let res = {
                 code: "Unspecified Failure",
                 success: false,
@@ -528,21 +567,25 @@ const resolvers = {
                         }
                     }
                     if (properties.includes("objectInfo")) {
-                        if(args.objectInfo.every(objectProperty => objectProperty.parameter.trim() !== "" && objectProperty.value.trim() !== "")){
-                            newMapItem.objectInfo = args.objectInfo.map(objectInfo=>{return {parameter:objectInfo.parameter, value:objectInfo.value}});
-                        }else{
+                        // noinspection DuplicatedCode
+                        if (args.objectInfo.every(objectProperty => objectProperty.parameter.trim() !== "" && objectProperty.value.trim() !== "")) {
+                            newMapItem.objectInfo = args.objectInfo.map(objectInfo => {
+                                return {parameter: objectInfo.parameter, value: objectInfo.value}
+                            });
+                        } else {
                             res.code = "Invalid Argument";
                             res.message = "One or more objectInfo properties or values do not contain any non-whitespace characters. The query has been terminated to prevent excessively stupid map item names.";
                             return res;
                         }
-                    }else{
+                    } else {
                         args.objectInfo = []
                     }
-                    if (properties.includes("pos")){
-                        newMapItem.pos = {x:args.pos.x, y:args.pos.y, z:args.pos.z};
+                    // noinspection DuplicatedCode,DuplicatedCode
+                    if (properties.includes("pos")) {
+                        newMapItem.pos = {x: args.pos.x, y: args.pos.y, z: args.pos.z};
                     }
                     if (properties.includes("rot")) {
-                        newMapItem.rot = {x:args.rot.x, y:args.rot.y, z:args.rot.z};
+                        newMapItem.rot = {x: args.rot.x, y: args.rot.y, z: args.rot.z};
                     }
                     if (properties.includes("scale")) {
                         if (args.scale > 0) {
@@ -566,26 +609,31 @@ const resolvers = {
                         let modelPath = `MR/models/${args.modelPath}/model.glb`;
                         let file = bucket.file(modelPath);
                         let fileExists = (await file.exists())[0];
-                        if(fileExists){
+                        if (fileExists) {
                             // Valid model
                             newMapItem.modelPath = args.modelPath;
-                        }else{
+                        } else {
                             res.code = "Invalid Argument";
                             res.message = "The model path you provided does not match any known object in the observable universe. Or at least, it doesn't match anything on our server.";
                             return res;
                         }
                     }
-                    if (properties.includes("children")){
-                        if(await args.children.every(async(childRef)=>{
+                    if (properties.includes("children")) {
+                        if (await args.children.every(async (childRef) => {
                             let childCollectionRef = db.collection('mapCollections').doc(childRef.collectionId)
                             let childCollection = await childCollectionRef.get();
-                            if (!childCollection.exists){
+                            if (!childCollection.exists) {
                                 return false;
                             }
                             let childMapItemIds = childCollection.data().mapItems.map(mapItem => mapItem.objectId);
                             return childMapItemIds.includes(childRef.objectId);
-                        })){
-                            newMapItem.children = args.children.map(childRef=>{return {collectionId:childRef.collectionId, objectId:childRef.objectId}});
+                        })) {
+                            newMapItem.children = args.children.map(childRef => {
+                                return {
+                                    collectionId: childRef.collectionId,
+                                    objectId: childRef.objectId
+                                }
+                            });
                         } else {
                             res.code = "Invalid Argument";
                             res.message = "One of the children provided, or the collection they are in do not exist in our database. Mysterious...";
@@ -599,7 +647,7 @@ const resolvers = {
                         res.code = "Success";
                         res.success = true;
                         res.message = "The new Map Item has been created.";
-                        res.mapItem = dataFormatters.firebaseToQuery.mapItem(newMapItem, existingCollection.id, existingCollection.data().owner);
+                        res.mapItem = await dataFormatters.firebaseToQuery.mapItem(newMapItem, existingCollection.id, existingCollection.data().owner);
                         return res
                     }
                 } else {
@@ -611,31 +659,8 @@ const resolvers = {
                 res.message = "You cannot modify owner-less resources via the api.";
             }
             return res;
-            if (context.req.user) {
-                let collectionObject = {};
-                collectionObject.owner = context.req.user.uid;
-                if (args.name.trim() === "") {
-                    res.code = "Invalid Argument";
-                    res.message = "You have supplied a name that does not contain any non-whitespace characters. The query has been terminated to prevent excessively stupid collection names.";
-                    return res;
-                }
-                collectionObject.collectionName = args.name;
-                collectionObject.visibility = "Private";
-                collectionObject.mapItems = [];
-                const docRef = await db.collection('mapCollections').add(collectionObject);
-                const doc = await docRef.get();
-                let data = doc.data();
-                res.collection = dataFormatters.firebaseToQuery.collection(data, doc.id);
-                res.code = "Success";
-                res.success = true;
-                res.message = "The collection has been created.";
-            } else {
-                res.code = "Access Denied";
-                res.message = "You must be signed in to create a collection.";
-            }
-            return res
         },
-        deleteMapItem: async (parent, args, context, info) => {
+        deleteMapItem: async (parent, args, context) => {
             let res = {
                 code: "Unspecified Failure",
                 success: false,
@@ -643,6 +668,7 @@ const resolvers = {
                 collection: null
             }
             if (context.req.user) {
+                // noinspection JSUnresolvedVariable
                 let existingCollectionRef = db.collection('mapCollections').doc(args.objectRef.collectionId)
                 let existingCollection = await existingCollectionRef.get();
                 if (!existingCollection.exists) {
@@ -653,11 +679,13 @@ const resolvers = {
                     if (existingCollection.data().owner === context.req.user.uid) {
                         // Correct user
                         let existingMapItems = existingCollection.data().mapItems;
-                        if (!existingMapItems.some(mapItem=>mapItem.objectId === args.objectRef.objectId)){
+                        // noinspection JSUnresolvedVariable
+                        if (!existingMapItems.some(mapItem => mapItem.objectId === args.objectRef.objectId)) {
                             res.code = "Map Item Not Found";
                             res.message = "There were no map items found in the collection at this id. Did you make sure you used a valid id?";
                             return res;
                         }
+                        // noinspection JSUnresolvedVariable
                         existingMapItems = existingMapItems.filter(mapItem => mapItem.objectId !== args.objectRef.objectId);
                         let deleteRes = await existingCollectionRef.update({mapItems: existingMapItems});
                         if (deleteRes) {
@@ -689,6 +717,7 @@ const resolvers = {
 }
 
 
+// noinspection JSUnresolvedVariable
 process.env.APOLLO_KEY = functions.config().atlas.apollo_key;
 
 const server = new ApolloServer({
@@ -761,6 +790,7 @@ exports.redirect = functions.https.onRequest(async (req, res) => {
     cookieParser()(req, res, () => {
         const state = req.cookies.state || crypto.randomBytes(20).toString('hex');
         console.log('Setting verification state:', state);
+        // noinspection JSUnresolvedFunction
         res.cookie('state', state.toString(), {
             maxAge: 3600000,
             secure: true,
@@ -773,6 +803,7 @@ exports.redirect = functions.https.onRequest(async (req, res) => {
             state: state,
         });
         console.log('Redirecting to:', redirectUri);
+        // noinspection JSUnresolvedFunction
         res.redirect(redirectUri);
     });
 });
@@ -833,11 +864,13 @@ exports.token = functions.https.onRequest(async (req, res) => {
             const userName = user.username;
 
             // Create a Firebase account and get the Custom Auth Token.
-            const firebaseToken = await createFirebaseAccount(discordUserID, email, userName, profilePic, accessToken);
+            const firebaseToken = await createFirebaseAccount(discordUserID, email, userName, profilePic);
             // Serve an HTML page that signs the user in and updates the user profile.
+            // noinspection JSUnresolvedFunction
             return res.jsonp({token: firebaseToken});
         });
     } catch (error) {
+        // noinspection JSUnresolvedFunction
         return res.jsonp({
             error: error.toString(),
         });
@@ -850,7 +883,7 @@ exports.token = functions.https.onRequest(async (req, res) => {
  *
  * @returns {Promise<string>} The Firebase custom auth token in a promise.
  */
-async function createFirebaseAccount(discordID, email, displayName, photoURL, accessToken) {
+async function createFirebaseAccount(discordID, email, displayName, photoURL) {
     // The UID we'll assign to the user.
     const uid = `discord:${discordID}`;
 

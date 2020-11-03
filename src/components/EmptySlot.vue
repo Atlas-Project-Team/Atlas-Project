@@ -49,7 +49,6 @@
 </template>
 
 <script>
-import Vue from "vue";
 import Split from "split.js";
 import Login from "./Login.vue";
 import Objects from "./Objects.vue";

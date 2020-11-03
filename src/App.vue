@@ -2,7 +2,21 @@
   <v-app :style="{background: $vuetify.theme.themes[theme].background}">
     <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/@mdi/font@5.x/css/materialdesignicons.min.css" rel="stylesheet">
-    <EmptySlot></EmptySlot>
+    <div class="layout-container" v-if="this.$store.state.user === undefined">
+      <v-container fill-height>
+        <v-row justify="center">
+          <v-card>
+            <v-card-title>Connecting to Auth Server</v-card-title>
+            <v-card-text>
+              <v-progress-linear indeterminate></v-progress-linear>
+            </v-card-text>
+          </v-card>
+        </v-row>
+      </v-container>
+    </div>
+    <EmptySlot
+        v-else
+    ></EmptySlot>
   </v-app>
 </template>
 
@@ -19,15 +33,16 @@ export default {
     EmptySlot
   },
   mounted() {
-    console.log('mounted');
-    this.$store.dispatch('refreshMapData');
-
     window.firebase = firebase;
 
     firebase.auth().onAuthStateChanged(async (user)=>{
-      console.log({user});
-      let token = await firebase.auth().currentUser.getIdToken(true)
-      this.$store.commit('setUserToken', token)
+      if(user) {
+        let token = await firebase.auth().currentUser.getIdToken(true);
+        this.$store.commit('setUserToken', token);
+      }else{
+        this.$store.commit('setUserToken', null);
+      }
+      this.$store.commit('setUser', user);
       await this.$store.dispatch('refreshMapData');
     });
   },

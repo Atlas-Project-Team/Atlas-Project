@@ -6,20 +6,29 @@ import { createApolloFetch } from 'apollo-fetch';
 Vue.use(Vuex);
 
 const fetch = createApolloFetch({
+  // uri: 'http://localhost:5001/atlas-project-274801/us-central1/api',
   uri: 'https://us-central1-atlas-project-274801.cloudfunctions.net/api',
 });
 
 const store = new Vuex.Store({
   state: {
     mapData: [],
-    userToken: undefined,
+    collections: [],
+    userToken: null,
+    user: undefined,
   },
   mutations: {
     setMapData(state, newMapData) {
       state.mapData = newMapData;
     },
+    setCollections(state, newCollections) {
+      state.collections = newCollections;
+    },
     setUserToken(state, newUserToken) {
       state.userToken = newUserToken;
+    },
+    setUser(state, newUser) {
+      state.user = newUser;
     },
     createMapItem(state, args) {
       /* apolloClient
@@ -72,25 +81,42 @@ const store = new Vuex.Store({
     async refreshMapData(context) {
       const res = await fetch({
         query: `
-            query {
-              getMapData {
+          query {
+            getCollections {
+              name,
+              id,
+              owner,
+              mapItems{
                 name,
                 objectId,
-                pos {x,y,z},
+                pos { x, y, z },
                 modelPath,
-                objectInfo {
-                    parameter,
-                    value
-                },
+                objectInfo { parameter, value },
                 scale,
                 defaultZoom,
                 owner,
+                ownerUsername,
+                collection,
+                children {
+                  collectionId,
+                  objectId
+                }
               }
             }
-          `,
+          }
+        `,
       });
       if (res) {
-        context.commit('setMapData', res.data.getMapData);
+        console.log(res);
+        const collectionsArray = res.data.getCollections;
+        const mapData: any[] = [];
+
+        collectionsArray.forEach((collection: any) => {
+          mapData.push(...collection.mapItems);
+        });
+
+        context.commit('setMapData', mapData);
+        context.commit('setCollections', collectionsArray);
       }
     },
   },
