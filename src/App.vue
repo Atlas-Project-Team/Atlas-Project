@@ -6,7 +6,8 @@
       <v-container fill-height>
         <v-row justify="center">
           <v-card>
-            <v-card-title>Connecting to Auth Server</v-card-title>
+            <v-card-title v-if="firstImpression || !showMessage">Connecting to Auth Server</v-card-title>
+            <v-card-title v-else>Hacking into the mainframe</v-card-title>
             <v-card-text>
               <v-progress-linear indeterminate></v-progress-linear>
             </v-card-text>
@@ -27,13 +28,26 @@ import firebase from 'firebase/app';
 import 'firebase/analytics';
 import 'firebase/auth';
 
+// FirstImpression from https://github.com/robflaherty/firstImpression.js
+const firstImpression=function(c,f){var a,b,d,e;a=function(j,k,i){var h,g,l;if(arguments.length>1&&String(k)!=="[object Object]"){i=i||{};if(k===null||k===undefined){i.expires=-1}if(typeof i.expires==="number"){h=i.expires;l=i.expires=new Date();l.setTime(l.getTime()+h*24*60*60*1000)}i.path="/";return(document.cookie=[encodeURIComponent(j),"=",encodeURIComponent(k),i.expires?"; expires="+i.expires.toUTCString():"",i.path?"; path="+i.path:"",i.domain?"; domain="+i.domain:"",i.secure?"; secure":""].join(""))}g=new RegExp("(?:^|; )"+encodeURIComponent(j)+"=([^;]*)").exec(document.cookie);return g?decodeURIComponent(g[1]):null};if(c===undefined){c="_firstImpression"}if(f===undefined){f=730}if(c===null){a("_firstImpression",null);return}if(f===null){a(c,null);return}b=function(){return a(c)};d=function(){a(c,true,{expires:f})};e=function(){var g=b();if(!g){d()}return !g};return e()};
+
 export default {
   name: 'App',
   components: {
     EmptySlot
   },
+  data() {
+    return {
+      firstImpression: true,
+      showMessage: false
+    }
+  },
   mounted() {
     window.firebase = firebase;
+    this.firstImpression = firstImpression();
+    if(Math.random() > 0.9){
+      this.showMessage = true;
+    }
 
     firebase.auth().onAuthStateChanged(async (user)=>{
       if(user) {
