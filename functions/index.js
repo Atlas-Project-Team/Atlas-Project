@@ -18,6 +18,15 @@ admin.initializeApp({
 const bucket = admin.storage().bucket();
 const db = admin.firestore();
 
+const getUsername = async (uid) => {
+    let user = await admin.auth().getUser(uid);
+    if (user) {
+        return user.displayName;
+    } else{
+        return "";
+    }
+}
+
 const typeDefs = gql`
     type Query {
         getCollections: [MapCollection!]!,
@@ -195,7 +204,8 @@ const resolvers = {
             let querySnapshot = await db.collection("mapCollections").where("owner", "in", (context.req.user ? ['', context.req.user.uid] : [''])).get();
             const processRecord = async (doc) => {
                 let data = doc.data();
-                data.mapItems = data.mapItems.map((mapItem) => dataFormatters.firebaseToQuery.mapItem(mapItem, doc.id, data.owner));
+                let username = await getUsername(data.owner);
+                data.mapItems = data.mapItems.map((mapItem) => dataFormatters.firebaseToQuery.mapItem(mapItem, doc.id, data.owner, username));
                 data.mapItems = await Promise.all(data.mapItems);
                 mapData.push(...data.mapItems);
             }
@@ -492,7 +502,7 @@ const resolvers = {
                                     res.code = "No Changes.";
                                     res.success = true;
                                     res.message = "The changes have already been applied. No operation occurred.";
-                                    res.collection = await dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
+                                    res.mapItem = await dataFormatters.firebaseToQuery.mapItem(existingMapItem, existingCollection.id, existingCollection.data().owner, await getUsername(existingCollection.data().owner));
                                     return res
                                 } else {
                                     let updateRes = await existingCollectionRef.update({mapItems: existingMapItems});
@@ -500,7 +510,7 @@ const resolvers = {
                                         res.code = "Success";
                                         res.success = true;
                                         res.message = "The changes have been applied.";
-                                        res.mapItem = await dataFormatters.firebaseToQuery.mapItem(existingMapItem, existingCollection.id, existingCollection.data().owner);
+                                        res.mapItem = await dataFormatters.firebaseToQuery.mapItem(existingMapItem, existingCollection.id, existingCollection.data().owner, await getUsername(existingCollection.data().owner));
                                         return res
                                     }
                                 }
@@ -508,7 +518,7 @@ const resolvers = {
                                 res.code = "No Arguments";
                                 res.success = true;
                                 res.message = "You did not supply any arguments, as a result, nothing was changed... successfully?";
-                                res.collection = await dataFormatters.firebaseToQuery.collection(existingCollection.data(), existingCollection.id);
+                                res.mapItem = await dataFormatters.firebaseToQuery.mapItem(existingMapItem, existingCollection.id, existingCollection.data().owner, await getUsername(existingCollection.data().owner));
                                 return res
                             }
                         } else {
@@ -518,7 +528,7 @@ const resolvers = {
                         }
                     } else {
                         res.code = "Access Denied";
-                        res.message = "You are not signed in to a valid Atlas user account. Please ensure you have used a valid and current auth token.";
+                        res.message = "You cannot modify resources that do not belong to you.";
                     }
                 } else {
                     res.code = "Access Denied";
@@ -535,7 +545,7 @@ const resolvers = {
                 code: "Unspecified Failure",
                 success: false,
                 message: "The mutation resolver completed the request without modifying the response. This should never happen. Please contact BenCo or another lead developer!",
-                collection: null
+                mapItem: null
             }
             let existingCollectionRef = db.collection('mapCollections').doc(args.collectionId)
             let existingCollection = await existingCollectionRef.get();
@@ -555,100 +565,110 @@ const resolvers = {
                 res.message = "There were no collections found in the database at this id. Did you make sure you used a valid id? You may need to create a collection to insert items into before creating map items.";
             } else if (existingCollection.data().owner !== "") {
                 if (context.req.user) {
-                    // Valid authentication.
-                    let properties = Object.keys(args);
-                    if (properties.includes("name")) {
-                        if (args.name.trim() !== "") {
-                            newMapItem.name = args.name;
-                        } else {
-                            res.code = "Invalid Argument";
-                            res.message = "You have supplied a name that does not contain any non-whitespace characters. The query has been terminated to prevent excessively stupid map item names.";
-                            return res;
-                        }
-                    }
-                    if (properties.includes("objectInfo")) {
-                        // noinspection DuplicatedCode
-                        if (args.objectInfo.every(objectProperty => objectProperty.parameter.trim() !== "" && objectProperty.value.trim() !== "")) {
-                            newMapItem.objectInfo = args.objectInfo.map(objectInfo => {
-                                return {parameter: objectInfo.parameter, value: objectInfo.value}
-                            });
-                        } else {
-                            res.code = "Invalid Argument";
-                            res.message = "One or more objectInfo properties or values do not contain any non-whitespace characters. The query has been terminated to prevent excessively stupid map item names.";
-                            return res;
-                        }
-                    } else {
-                        args.objectInfo = []
-                    }
-                    // noinspection DuplicatedCode,DuplicatedCode
-                    if (properties.includes("pos")) {
-                        newMapItem.pos = {x: args.pos.x, y: args.pos.y, z: args.pos.z};
-                    }
-                    if (properties.includes("rot")) {
-                        newMapItem.rot = {x: args.rot.x, y: args.rot.y, z: args.rot.z};
-                    }
-                    if (properties.includes("scale")) {
-                        if (args.scale > 0) {
-                            newMapItem.scale = args.scale;
-                        } else {
-                            res.code = "Invalid Argument";
-                            res.message = "The provided scale was less than or equal to zero. Here at Atlas, we like our objects large enough to exist, so we're kindly asking you to please not.";
-                            return res;
-                        }
-                    }
-                    if (properties.includes("defaultZoom")) {
-                        if (args.defaultZoom > 0) {
-                            newMapItem.defaultZoom = args.defaultZoom;
-                        } else {
-                            res.code = "Invalid Argument";
-                            res.message = "The provided default zoom was less than or equal to zero. Here at Atlas, we like to look at objects from further than *literally being in the exact same position as them* away, so kindly give a default zoom above zero.";
-                            return res;
-                        }
-                    }
-                    if (properties.includes("modelPath")) {
-                        let modelPath = `MR/models/${args.modelPath}/model.glb`;
-                        let file = bucket.file(modelPath);
-                        let fileExists = (await file.exists())[0];
-                        if (fileExists) {
-                            // Valid model
-                            newMapItem.modelPath = args.modelPath;
-                        } else {
-                            res.code = "Invalid Argument";
-                            res.message = "The model path you provided does not match any known object in the observable universe. Or at least, it doesn't match anything on our server.";
-                            return res;
-                        }
-                    }
-                    if (properties.includes("children")) {
-                        if (await args.children.every(async (childRef) => {
-                            let childCollectionRef = db.collection('mapCollections').doc(childRef.collectionId)
-                            let childCollection = await childCollectionRef.get();
-                            if (!childCollection.exists) {
-                                return false;
+                    if(existingCollection.data().owner === context.req.user.uid) {
+                        // Valid authentication.
+                        let properties = Object.keys(args);
+                        if (properties.includes("name")) {
+                            if (args.name.trim() !== "") {
+                                newMapItem.name = args.name;
+                            } else {
+                                res.code = "Invalid Argument";
+                                res.message = "You have supplied a name that does not contain any non-whitespace characters. The query has been terminated to prevent excessively stupid map item names.";
+                                return res;
                             }
-                            let childMapItemIds = childCollection.data().mapItems.map(mapItem => mapItem.objectId);
-                            return childMapItemIds.includes(childRef.objectId);
-                        })) {
-                            newMapItem.children = args.children.map(childRef => {
-                                return {
-                                    collectionId: childRef.collectionId,
-                                    objectId: childRef.objectId
-                                }
-                            });
-                        } else {
-                            res.code = "Invalid Argument";
-                            res.message = "One of the children provided, or the collection they are in do not exist in our database. Mysterious...";
-                            return res;
                         }
-                    }
-                    let existingMapItems = existingCollection.data().mapItems;
-                    existingMapItems.push(newMapItem);
-                    let updateRes = await existingCollectionRef.update({mapItems: existingMapItems});
-                    if (updateRes) {
-                        res.code = "Success";
-                        res.success = true;
-                        res.message = "The new Map Item has been created.";
-                        res.mapItem = await dataFormatters.firebaseToQuery.mapItem(newMapItem, existingCollection.id, existingCollection.data().owner);
-                        return res
+                        if (properties.includes("objectInfo")) {
+                            // noinspection DuplicatedCode
+                            if (args.objectInfo.every(objectProperty => objectProperty.parameter.trim() !== "" && objectProperty.value.trim() !== "")) {
+                                newMapItem.objectInfo = args.objectInfo.map(objectInfo => {
+                                    return {
+                                        parameter: objectInfo.parameter,
+                                        value: objectInfo.value
+                                    }
+                                });
+                            } else {
+                                res.code = "Invalid Argument";
+                                res.message = "One or more objectInfo properties or values do not contain any non-whitespace characters. The query has been terminated to prevent excessively stupid map item names.";
+                                return res;
+                            }
+                        } else {
+                            args.objectInfo = []
+                        }
+                        // noinspection DuplicatedCode,DuplicatedCode
+                        if (properties.includes("pos")) {
+                            newMapItem.pos = {x: args.pos.x, y: args.pos.y, z: args.pos.z};
+                        }
+                        if (properties.includes("rot")) {
+                            newMapItem.rot = {x: args.rot.x, y: args.rot.y, z: args.rot.z};
+                        }
+                        if (properties.includes("scale")) {
+                            if (args.scale > 0) {
+                                newMapItem.scale = args.scale;
+                            } else {
+                                res.code = "Invalid Argument";
+                                res.message = "The provided scale was less than or equal to zero. Here at Atlas, we like our objects large enough to exist, so we're kindly asking you to please not.";
+                                return res;
+                            }
+                        }
+                        if (properties.includes("defaultZoom")) {
+                            if (args.defaultZoom > 0) {
+                                newMapItem.defaultZoom = args.defaultZoom;
+                            } else {
+                                res.code = "Invalid Argument";
+                                res.message = "The provided default zoom was less than or equal to zero. Here at Atlas, we like to look at objects from further than *literally being in the exact same position as them* away, so kindly give a default zoom above zero.";
+                                return res;
+                            }
+                        }
+                        if (properties.includes("modelPath")) {
+                            let modelPath = `MR/models/${args.modelPath}/model.glb`;
+                            let file = bucket.file(modelPath);
+                            let fileExists = (await file.exists())[0];
+                            if (fileExists) {
+                                // Valid model
+                                newMapItem.modelPath = args.modelPath;
+                            } else {
+                                res.code = "Invalid Argument";
+                                res.message = "The model path you provided does not match any known object in the observable universe. Or at least, it doesn't match anything on our server.";
+                                return res;
+                            }
+                        }
+                        if (properties.includes("children")) {
+                            if (await args.children.every(async (childRef) => {
+                                let childCollectionRef = db.collection('mapCollections').doc(childRef.collectionId)
+                                let childCollection = await childCollectionRef.get();
+                                if (!childCollection.exists) {
+                                    return false;
+                                }
+                                let childMapItemIds = childCollection.data().mapItems.map(mapItem => mapItem.objectId);
+                                return childMapItemIds.includes(childRef.objectId);
+                            })) {
+                                newMapItem.children = args.children.map(childRef => {
+                                    return {
+                                        collectionId: childRef.collectionId,
+                                        objectId: childRef.objectId
+                                    }
+                                });
+                            } else {
+                                res.code = "Invalid Argument";
+                                res.message = "One of the children provided, or the collection they are in, do not exist in our database. Mysterious...";
+                                return res;
+                            }
+                        }
+                        let existingMapItems = existingCollection.data().mapItems;
+                        existingMapItems.push(newMapItem);
+                        let updateRes = await existingCollectionRef.update({mapItems: existingMapItems});
+                        if (updateRes) {
+                            res.code = "Success";
+                            res.success = true;
+                            res.message = "The new Map Item has been created.";
+                            let user = await admin.auth().getUser(existingCollection.data().owner);
+                            let username = user.displayName;
+                            res.mapItem = await dataFormatters.firebaseToQuery.mapItem(newMapItem, existingCollection.id, existingCollection.data().owner, username);
+                            return res
+                        }
+                    }else{
+                        res.code = "Access Denied";
+                        res.message = "You cannot modify resources that do not belong to you.";
                     }
                 } else {
                     res.code = "Access Denied";

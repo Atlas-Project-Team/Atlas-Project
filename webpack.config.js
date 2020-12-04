@@ -32,6 +32,7 @@ module.exports = {
           path.resolve(__dirname, 'src/components/Login.vue'),
           path.resolve(__dirname, 'src/components/Objects.vue'),
           path.resolve(__dirname, 'src/components/EmptySlot.vue'),
+          path.resolve(__dirname, 'src/plugins/confirm/Confirm.vue'),
           path.resolve(__dirname, 'src/App.vue'),
         ],
       },

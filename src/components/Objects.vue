@@ -58,7 +58,9 @@
               <v-btn @click.stop="openCreateForm">Create Object</v-btn>
             </template>
             <v-card>
-              <v-card-title v-if="this.user">Create Object</v-card-title>
+              <v-card-title v-if="this.user">
+                {{ this.createMode.charAt(0).toUpperCase() + this.createMode.slice(1) }} Object
+              </v-card-title>
               <v-card-title v-else>Don't Create Object?</v-card-title>
 
               <v-card-text v-if="this.user">
@@ -66,10 +68,16 @@
                   collection to place items in before you can create items. Go to the collections
                   panel to do this.
                 </v-alert>
-                <v-form v-else>
+                <v-form
+                    v-else
+                    ref="newObjectForm"
+                    v-model="newObjectValid"
+                >
                   <v-select
                       v-model="newObject.collectionId"
                       :items="userCollections"
+                      :rules="[c=> (c?c:'').trim() !==''||'You must select a collection to place the location in.']"
+                      :disabled="this.createMode === 'edit'"
                       item-text="name"
                       item-value="id"
                       label="Select a Collection to use"
@@ -77,6 +85,7 @@
                   ></v-select>
                   <v-text-field
                       v-model="newObject.name"
+                      :rules="[n=> (n?n:'').trim() !== '' || 'You must give your location a name.']"
                       label="Location Name"
                   ></v-text-field>
                   <v-row>
@@ -104,21 +113,23 @@
                   </v-row>
                   <v-text-field
                       v-model.number="newObject.scale"
+                      :rules="[c=>c>0||'The object must be larger than &quot;literally non-existent&quot;.']"
                       hint="Don't worry, you can change this later."
                       label="Size"
                       type="number"
                   ></v-text-field>
+                  <v-select
+                      v-model="newObject.modelPath"
+                      :items="models"
+                      :rules="[m=> !!m || 'You must select a model to represent this location.']"
+                      item-text="name"
+                      item-value="path"
+                      label="3D Model"
+                  ></v-select>
                   <v-expansion-panels flat>
                     <v-expansion-panel>
                       <v-expansion-panel-header>Optional Settings</v-expansion-panel-header>
                       <v-expansion-panel-content>
-                        <v-select
-                            v-model="newObject.modelPath"
-                            :items="models"
-                            item-text="name"
-                            item-value="path"
-                            label="3D Model"
-                        ></v-select>
                         <v-row>
                           <v-col>
                             <v-text-field
@@ -147,13 +158,14 @@
                         </v-row>
                         <v-text-field
                             v-model.number="newObject.defaultZoom"
+                            :rules="[c=>c>0||'The default zoom must be further than &quot;inside the location&quot; away.']"
                             hint="How many km should the camera be from the object when you look at it?"
                             label="Default Zoom Distance"
                             type="number"
                         ></v-text-field>
                         <v-select
                             v-model="newObject.children"
-                            :items="mapData"
+                            :items="mapData.filter(item=>item.objectId !== newObject.objectId)"
                             chips
                             deletable-chips
                             item-text="name"
@@ -172,26 +184,39 @@
                           <v-card>
                             <v-card-title>New Property</v-card-title>
                             <v-card-text>
-                              <v-form>
+                              <v-form ref="newPropertyForm">
                                 <v-row>
                                   <v-col>
-                                    <v-text-field
+                                    <v-combobox
                                         v-model="newProperty.parameter"
+                                        :items="existingParameters"
+                                        :rules="[n=> (n?n:'').trim()!==''||'You must give your property a parameter.', ()=>!this.newObject.objectInfo.some(p=>p.parameter === this.newProperty.parameter && p.value === this.newProperty.value) || 'The property must not already exist.']"
                                         label="Parameter / Attribute"
-                                    ></v-text-field>
+                                    ></v-combobox>
                                   </v-col>
                                   <v-col>
-                                    <v-text-field
+                                    <v-combobox
                                         v-model="newProperty.value"
+                                        :items="existingValues"
+                                        :rules="[n=> (n?n:'').trim()!==''||'You must give your property a value.', ()=>!this.newObject.objectInfo.some(p=>p.parameter === this.newProperty.parameter && p.value === this.newProperty.value) || 'The property must not already exist.']"
                                         label="Property Value"
-                                    ></v-text-field>
+                                    ></v-combobox>
                                   </v-col>
                                 </v-row>
                               </v-form>
                             </v-card-text>
                             <v-card-actions>
-                              <v-btn @click="saveProperty">Save</v-btn>
-                              <v-btn text @click="propertyDialog = false;">Cancel</v-btn>
+                              <v-btn
+                                  @click="saveProperty()"
+                              >
+                                Save
+                              </v-btn>
+                              <v-btn
+                                  text
+                                  @click="$refs.newPropertyForm.resetValidation();propertyDialog = false;"
+                              >
+                                Cancel
+                              </v-btn>
                             </v-card-actions>
                           </v-card>
                         </v-dialog>
@@ -202,7 +227,7 @@
                               close
                               @click:close="newObject.objectInfo.splice(newObject.objectInfo.findIndex(p=>p.parameter === property.parameter && p.value === property.value), 1)"
                           >
-                            {{property.parameter}}: {{property.value}}
+                            {{ property.parameter }}: {{ property.value }}
                           </v-chip>
                         </v-row>
                       </v-expansion-panel-content>
@@ -211,13 +236,26 @@
                 </v-form>
               </v-card-text>
               <v-card-text v-else>
-                You need to be signed in to create objects. Sign in using the login panel and come
-                back.
+                <v-alert text type="error">
+                  You need to be signed in to create objects. Sign in using the login panel and come
+                  back.
+                </v-alert>
               </v-card-text>
 
               <v-card-actions v-if="this.user && this.userCollections.length>0">
-                <v-btn>Save</v-btn>
-                <v-btn text @click="createDialog = false">Cancel</v-btn>
+                <v-btn
+                    :disabled="saving"
+                    :loading="saving"
+                    @click="saveNewObject"
+                >
+                  Save
+                </v-btn>
+                <v-btn
+                    :disabled="saving" text
+                    @click="createDialog = false"
+                >
+                  Cancel
+                </v-btn>
               </v-card-actions>
               <v-card-actions v-else>
                 <v-btn @click="createDialog = false">Close</v-btn>
@@ -233,7 +271,6 @@
                 v-for="item in mapData"
                 v-show="(searchResults.includes(item.objectId.toString()) || searchQuery.trim()==='') && checkFilter(item)"
                 v-bind:key="item.objectId"
-                :map-data="mapData"
                 v-bind:item="item">
               <v-list-item-content>
                 <v-list-item-title v-text="item.name"></v-list-item-title>
@@ -255,36 +292,86 @@
                   v-for="(value, parameter) in currentItem.pos"
                   v-show="['x','y','z'].includes(parameter)"
                   :key="`${parameter}:${value}`"
-                  style="height: 20px; min-height: 20px;">
+                  class="details"
+              >
                 <strong>{{ parameter }}</strong>: {{ value }}
               </v-list-item>
             </v-list>
-            <v-list dense>
+
+            <v-list v-if="currentItem.objectInfo.length > 0" dense>
               <v-subheader>Object Details</v-subheader>
               <v-list-item
                   v-for="{value, parameter} in currentItem.objectInfo"
                   :key="`${parameter}:${value}`"
-                  style="height: 20px; min-height: 20px;">
+                  class="details"
+              >
                 <strong>{{ parameter }}</strong>: {{ value }}
               </v-list-item>
             </v-list>
-            <v-subheader>Map-Item Creator:&nbsp;<span
-                style="color: white">{{
-                currentItem.ownerUsername === "" ? "N/A" : currentItem.ownerUsername
-              }}</span>
-            </v-subheader>
+
+            <v-list dense>
+              <v-subheader>Map-Item Creator</v-subheader>
+              <v-list-item class="details">{{
+                currentItem.ownerUsername === "" ? "Atlas" : currentItem.ownerUsername
+              }}</v-list-item>
+            </v-list>
+
+            <v-list dense v-if="currentItem.children.length > 0">
+              <v-subheader>Children<v-spacer/><span class="mx-2 text-caption orange--text text--darken-1" v-if="undefinedChildren > 0">({{undefinedChildren}} {{ undefinedChildren === 1 ? "child is" : "children are"  }} hidden as you lack sufficient permission to view them.)</span></v-subheader>
+              <v-list-item
+                  v-for="child in populatedChildren"
+                  v-if="child !== undefined"
+                  :key="child.objectId"
+                  style="height: 25px; min-height: 25px;"
+                  @click="currentlySelected = mapData.findIndex(item => item.objectId === child.objectId);"
+              >
+                {{child.name}} - {{getCollectionNameById(child.collection)}}
+              </v-list-item>
+            </v-list>
           </v-card-text>
           <v-card-actions>
             <v-btn
                 color="blue lighten-4"
                 text
             >
-              Look At
+              Look At Object
+            </v-btn>
+            <v-btn
+                color="warning"
+                text
+                @click="editObject()"
+                v-show="currentItem.owner === $store.state.user.uid"
+            >
+              Edit Object
+            </v-btn>
+            <v-btn
+                color="error"
+                text
+                @click="deleteObject()"
+                v-show="currentItem.owner === $store.state.user.uid"
+            >
+              Delete Object
             </v-btn>
           </v-card-actions>
         </v-card>
       </v-col>
     </v-row>
+    <v-dialog v-model="errorDialog" max-width="800" persistent>
+      <v-alert :icon="false" class="mb-0" elevation="8" max-width="800" prominent type="error">
+        <span class="text-h3">Uh oh...<br/></span> <span
+          class="text-h4">Something went wrong!</span><br/>Our code wizards would love you to show
+        them the following error if you get a chance.<br/><code>{{ errorMessage }}</code><br/>
+        <v-btn class="mt-3" outlined @click="errorDialog=false">Dismiss</v-btn>
+      </v-alert>
+    </v-dialog>
+    <v-dialog v-model="loadingDialog" max-width="300" persistent>
+      <v-card>
+        <v-card-title>{{ loadingMessage }}</v-card-title>
+        <v-card-text>
+          <v-progress-linear indeterminate></v-progress-linear>
+        </v-card-text>
+      </v-card>
+    </v-dialog>
   </v-container>
 </template>
 
@@ -306,11 +393,18 @@ export default {
       currentlySelected: undefined,
       createDialog: false,
       newObject: {},
+      newObjectValid: false,
       models: [
         {name: "Origin Station", path: "OriginStation"}
       ],
       propertyDialog: false,
-      newProperty: {}
+      newProperty: {},
+      saving: false,
+      errorDialog: false,
+      errorMessage: '',
+      loadingDialog: false,
+      loadingMessage: '',
+      createMode: ''
     }
   },
   computed: {
@@ -366,9 +460,57 @@ export default {
         })
       });
       return filters;
+    },
+    existingParameters: function () {
+      let parameters = [];
+      this.$store.state.mapData.forEach(mapItem => {
+        parameters.push(...mapItem.objectInfo.map(o => o.parameter));
+      });
+      return [...new Set(parameters)];
+    },
+    existingValues: function () {
+      let values = [];
+      this.$store.state.mapData.forEach(mapItem => {
+        mapItem.objectInfo.forEach(prop => {
+          if (prop.parameter === this.newProperty.parameter) {
+            values.push(prop.value);
+          }
+        });
+      });
+      return [...new Set(values)];
+    },
+    populatedChildren: function () {
+      let children = _.cloneDeep(this.currentItem.children);
+      children = children.map(child=>this.mapData.find(item=>item.objectId === child.objectId));
+      return children;
+    },
+    undefinedChildren: function() {
+      let u = 0;
+      this.populatedChildren.forEach(child=>{
+        if(child === undefined){
+          u += 1;
+        }
+      });
+      return u;
     }
   },
   methods: {
+    getMapItemById(id){
+       let mapItem = this.mapData.find(item=>item.objectId === id);
+       if(!mapItem){
+         return null;
+       }else{
+         return mapItem;
+       }
+    },
+    getCollectionNameById(id){
+      if(!id) return null;
+      return this.collections.find(col=>col.id === id).name
+    },
+    error: function (error) {
+      this.errorDialog = true;
+      this.errorMessage = error.stack ? error.stack : error.toString();
+    },
     getFilters: function (filter) {
       let filters = [];
       this.mapData.forEach((item) => {
@@ -415,6 +557,7 @@ export default {
       this.newObject = {
         collectionId: "",
         name: "",
+        scale: 0,
         objectInfo: [],
         pos: {
           x: 0,
@@ -427,9 +570,29 @@ export default {
           z: 0
         },
         modelPath: "",
-        defaultZoom: 0,
+        defaultZoom: 50,
         children: []
-      }
+      };
+      this.createMode = 'create';
+      this.$nextTick(()=>{
+        this.$refs.newObjectForm.resetValidation();
+      });
+    },
+    saveNewObject: function () {
+        if (this.$refs.newObjectForm.validate()) {
+          this.newObject.children = this.newObject.children.map((child) => (
+              { collectionId: child.collection, objectId: child.objectId }))
+          this.saving = true;
+          this.$store.dispatch(this.createMode === 'edit' ? 'editMapItem' : 'createMapItem', this.newObject)
+              .then((res) => {
+                this.saving = false;
+                this.createDialog = false;
+                this.currentlySelected = this.$store.state.mapData.findIndex(item => item.objectId === res.mapItem.objectId);
+              })
+              .catch((e) => {
+                this.error(e)
+              });
+        }
     },
     openCreateProperty: function () {
       this.propertyDialog = true;
@@ -439,8 +602,60 @@ export default {
       }
     },
     saveProperty: function () {
-      this.newObject.objectInfo.push(this.newProperty);
-      this.propertyDialog = false;
+      //TODO This seems to need two clicks for some reason?
+      if (this.$refs.newPropertyForm.validate()) {
+        this.newObject.objectInfo.push(this.newProperty);
+        this.$refs.newPropertyForm.resetValidation();
+        this.propertyDialog = false;
+      }
+    },
+    deleteObject: function () {
+      let selectedObject = this.$store.state.mapData[this.currentlySelected];
+      // noinspection JSUnresolvedFunction
+      this.$confirm(`
+        <div class="body-1">
+          <span class="my-2">Are you sure you want to delete the object:</span><br/>
+          <code>${selectedObject.name}</code><br/>
+          <span class="font-weight-bold error--text my-2">This action is irreversible.</span>
+        </div>
+      `, {
+        title: 'Delete Object',
+        buttonTrueColor: 'error'
+      }).then(res => {
+        if (res) {
+          this.loadingDialog = true;
+          this.loadingMessage = "Deleting Object";
+          this.$store.dispatch('deleteMapItem', selectedObject)
+              .then(() => {
+                this.loadingDialog = false;
+                this.loadingMessage = '';
+              })
+              .catch((e) => {
+                this.error(e)
+              });
+        }
+      })
+    },
+    editObject: function () {
+      this.newObject = _.cloneDeep(this.$store.state.mapData[this.currentlySelected]);
+
+      this.newObject.collectionId = this.newObject.collection;
+      delete this.newObject.collection;
+
+      // Remove any dead children.
+      this.newObject.children = this.newObject.children.filter(childRef=>this.mapData.some(item=>item.objectId === childRef.objectId));
+
+      // Map children to their actual objects
+      this.newObject.children = this.newObject.children.map(childRef=>this.mapData.find(item=>item.objectId === childRef.objectId));
+
+      if (!this.newObject.rot) this.newObject.rot = {
+        x: 0,
+        y: 0,
+        z: 0
+      };
+
+      this.createDialog = true;
+      this.createMode = 'edit';
     }
   },
   watchers: {
@@ -452,5 +667,11 @@ export default {
 </script>
 
 <style scoped>
-
+  .details {
+    height: 20px;
+    min-height: 20px;
+  }
+  .v-list-item:before {
+    border-radius: 4px;
+  }
 </style>

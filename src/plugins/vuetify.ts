@@ -1,10 +1,10 @@
 import Vue from 'vue';
 import Vuetify from 'vuetify/lib';
+// @ts-ignore
+import VuetifyConfirm from './confirm/index';
 import 'vuetify/dist/vuetify.min.css';
 
-Vue.use(Vuetify);
-
-export default new Vuetify({
+const vuetify = new Vuetify({
   theme: {
     dark: true,
     themes: {
@@ -17,3 +17,8 @@ export default new Vuetify({
     },
   },
 });
+
+Vue.use(Vuetify);
+Vue.use(VuetifyConfirm, { vuetify });
+
+export default vuetify;

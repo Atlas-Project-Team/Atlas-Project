@@ -57,11 +57,12 @@ export default {
       "Hacking into the Mainframe",
       "Finding Dr.Bolt's Secret Lab",
       "Piecing Bob back together",
-      "Searching through disorganized yolol chips",
+      "Searching through disorganized YOLOL chips",
       "This map not brought to you by the Collective",
-      "Rewelding shared modules",
+      "Re-welding shared modules",
       "Turning down main menu music",
-      "Coming up with witty loading messages"
+      "Coming up with witty loading messages",
+      "Loading time: Q1 2021?"
     ];
     this.message = messages[Math.floor(Math.random() * messages.length)];
 
