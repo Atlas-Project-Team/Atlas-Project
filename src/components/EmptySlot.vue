@@ -1,119 +1,192 @@
 <template>
-  <div class="layout-container" v-if="state===''">
+  <div
+    v-if="state===''"
+    class="layout-container"
+  >
     <v-container fill-height>
       <v-row justify="center">
-          <v-card>
-            <v-card-title>
-              Atlas Map App
-            </v-card-title>
-            <v-select v-model="selectedComponent" :items="Object.keys(availableComponents)" outlined style="padding: 10px" placeholder="Select a component">
-            </v-select>
-            <v-card-actions>
-              <v-btn style="padding: 10px" :disabled="!selectedComponent" v-on:click="updateState('replace')">Select</v-btn>
-              <v-btn v-on:click="updateState('splitH')">Split Horizontal</v-btn>
-              <v-btn v-on:click="updateState('splitV')">Split Vertical</v-btn>
-              <v-btn v-if="child" v-on:click="merge()">Merge</v-btn>
-            </v-card-actions>
-          </v-card>
+        <v-card>
+          <v-card-title>
+            Atlas Map App
+          </v-card-title>
+          <v-select
+            v-model="selectedComponent"
+            :items="Object.keys(availableComponents)"
+            outlined
+            style="padding: 10px"
+            placeholder="Select a component"
+          />
+          <v-card-actions>
+            <v-btn
+              style="padding: 10px"
+              :disabled="!selectedComponent"
+              @click="updateState('replace')"
+            >
+              Select
+            </v-btn>
+            <v-btn @click="updateState('splitH')">
+              Split Horizontal
+            </v-btn>
+            <v-btn @click="updateState('splitV')">
+              Split Vertical
+            </v-btn>
+            <v-btn
+              v-if="child"
+              @click="merge()"
+            >
+              Merge
+            </v-btn>
+          </v-card-actions>
+        </v-card>
       </v-row>
     </v-container>
   </div>
-  <div class="layout-container" v-else-if="state==='splitH'">
-    <div class="item horizontal" id="unbound-left">
-      <empty-slot :child="true" @merge="split.destroy();state=''"></empty-slot>
+  <div
+    v-else-if="state==='splitH'"
+    class="layout-container"
+  >
+    <div
+      id="unbound-left"
+      class="item horizontal"
+    >
+      <empty-slot
+        style="height: calc(100% - 48px);"
+        :child="true"
+        @merge="split.destroy();state=''"
+      />
     </div>
-    <div class="item horizontal" id="unbound-right">
-      <empty-slot :child="true" @merge="split.destroy();state=''"></empty-slot>
+    <div
+      id="unbound-right"
+      class="item horizontal"
+    >
+      <empty-slot
+        style="height: calc(100% - 48px);"
+        :child="true"
+        @merge="split.destroy();state=''"
+      />
     </div>
   </div>
-  <div class="layout-container" v-else-if="state==='splitV'">
-    <div class="item vertical" id="unbound-top">
-      <empty-slot :child="true" @merge="split.destroy();state=''"></empty-slot>
+  <div
+    v-else-if="state==='splitV'"
+    class="layout-container"
+  >
+    <div
+      id="unbound-top"
+      class="item vertical"
+    >
+      <empty-slot
+        style="height: calc(100% - 48px);"
+        :child="true"
+        @merge="split.destroy();state=''"
+      />
     </div>
-    <div class="item vertical" id="unbound-bottom">
-      <empty-slot :child="true" @merge="split.destroy();state=''"></empty-slot>
+    <div
+      id="unbound-bottom"
+      class="item vertical"
+    >
+      <empty-slot
+        style="height: calc(100% - 48px);"
+        :child="true"
+        @merge="split.destroy();state=''"
+      />
     </div>
   </div>
   <div v-else-if="state==='replace'">
-    <v-toolbar dense flat>
-      <v-toolbar-title>{{selectedComponent}}</v-toolbar-title>
-      <v-spacer></v-spacer>
-      <v-btn icon @click="state='';selectedComponent=''">
+    <v-toolbar
+      dense
+      flat
+    >
+      <v-toolbar-title>{{ selectedComponent }}</v-toolbar-title>
+      <v-spacer />
+      <v-btn
+        icon
+        @click="state='';selectedComponent=''"
+      >
         <v-icon>
           mdi-close
         </v-icon>
       </v-btn>
     </v-toolbar>
-    <component :is="selectedComponent"></component>
+    <component :is="selectedComponent" />
   </div>
 </template>
 
 <script>
-import Split from "split.js";
-import Login from "./Login.vue";
-import Objects from "./Objects.vue";
-import EmptySlot from "./EmptySlot.vue";
-import vuetify from '../plugins/vuetify';
+import Split from 'split.js';
+import Login from './Login.vue';
+import Objects from './Objects.vue';
+import Map from './Map.vue';
+// eslint-disable-next-line import/no-self-import
+import EmptySlot from './EmptySlot.vue';
+import vuetify from '../plugins/vuetify.ts';
 
 export default {
-  name: "EmptySlot",
+  name: 'EmptySlot',
   vuetify,
   components: {
     EmptySlot,
     Objects,
-    Login
+    Login,
+    Map,
   },
   props: {
     child: {
       type: Boolean,
       required: false,
-      default: () => false
-    }
+      default: () => false,
+    },
   },
-  data () {
+  data() {
     return {
       state: '',
       replacedObject: '',
       availableComponents: {
-        "Login": Login,
-        "Objects": Objects        
+        Login,
+        Objects,
+        Map,
       },
       selectedComponent: null,
-      split: undefined
-    }
+      split: undefined,
+    };
   },
   methods: {
-    merge: function(){
+    merge() {
       this.$emit('merge');
     },
-    updateState: function(newState) {
-      this.state=newState;
-      this.$nextTick(()=>{
-        if(newState === 'splitH') {
-          let left = document.getElementById('unbound-left');
-          let right = document.getElementById('unbound-right');
+    updateState(newState) {
+      this.state = newState;
+      this.$nextTick(() => {
+        if (newState === 'splitH') {
+          const left = document.getElementById('unbound-left');
+          const right = document.getElementById('unbound-right');
           left.removeAttribute('id');
           right.removeAttribute('id');
           this.split = Split([left, right], {
-            direction: "horizontal",
-            gutterSize: 5
+            direction: 'horizontal',
+            gutterSize: 5,
           });
-        } else if(newState === 'splitV') {
-          let top = document.getElementById('unbound-top');
-          let bottom = document.getElementById('unbound-bottom');
+        } else if (newState === 'splitV') {
+          const top = document.getElementById('unbound-top');
+          const bottom = document.getElementById('unbound-bottom');
           top.removeAttribute('id');
           bottom.removeAttribute('id');
           this.split = Split([top, bottom], {
-            direction: "vertical",
-            gutterSize: 5
+            direction: 'vertical',
+            gutterSize: 5,
           });
         }
-      })
+      });
     },
   },
-}
+};
 </script>
 
 <style scoped>
+  .item {
+    overflow: hidden;
+  }
 
+  .layout-container {
+    height: 100% !important;
+  }
 </style>

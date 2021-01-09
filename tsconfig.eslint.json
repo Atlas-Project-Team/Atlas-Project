@@ -1,0 +1,11 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/**/*.js",
+    "src/**/*.ts",
+    "src/**/*.vue",
+    "src/components/Map.vue",
+    "src/components/App.vue",
+    "src/components/EmptySlot.vue"
+  ]
+}
